@@ -233,6 +233,8 @@ export default function HMIEditor() {
   const [bgColor, setBgColor] = useState("#0f1117");
   const [bgImage, setBgImage] = useState(null);
   const bgFileInputRef = useRef(null);
+  const importJsonRef = useRef(null);
+  const [saveStatus, setSaveStatus] = useState(null); // null | "saved" | "error"
   const [showResModal, setShowResModal] = useState(false);
   const [tempRes, setTempRes] = useState(RESOLUTIONS[2]);
 
@@ -424,6 +426,85 @@ export default function HMIEditor() {
   };
 
   const clearBgImage = () => setBgImage(null);
+
+  // ── Project serialization ──
+  const getProjectSnapshot = () => {
+    const currentAllPages = pages.map(p => p.id === activePageId ? {...p, elements} : p);
+    return {
+      version: 1,
+      resolution,
+      customW,
+      customH,
+      bgColor,
+      bgImage,
+      pages: currentAllPages,
+      sharedElements,
+      activePageId,
+    };
+  };
+
+  const applyProjectSnapshot = (data) => {
+    if (!data || data.version !== 1) return false;
+    const res = RESOLUTIONS.find(r => r.label === data.resolution?.label) || data.resolution || RESOLUTIONS[2];
+    setResolution(res);
+    setCustomW(data.customW ?? 800);
+    setCustomH(data.customH ?? 480);
+    setBgColor(data.bgColor ?? "#0f1117");
+    setBgImage(data.bgImage ?? null);
+    const loadedPages = data.pages || [{id:"p1",name:"Page 1",elements:[]}];
+    setPages(loadedPages);
+    setSharedElements(data.sharedElements || []);
+    const pid = data.activePageId || loadedPages[0]?.id;
+    setActivePageId(pid);
+    // Update _id counter to avoid ID collisions
+    const allIds = [...(data.sharedElements||[]), ...loadedPages.flatMap(p=>p.elements||[])].map(e=>parseInt(e.id?.replace("el_","")||0)).filter(Boolean);
+    if (allIds.length) _id = Math.max(...allIds) + 1;
+    return true;
+  };
+
+  // Autosave to localStorage
+  useEffect(() => {
+    const snap = getProjectSnapshot();
+    try {
+      localStorage.setItem("hmi_editor_project", JSON.stringify(snap));
+      setSaveStatus("saved");
+      const t = setTimeout(() => setSaveStatus(null), 1500);
+      return () => clearTimeout(t);
+    } catch { setSaveStatus("error"); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolution, customW, customH, bgColor, bgImage, pages, sharedElements, activePageId, elements]);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("hmi_editor_project");
+      if (raw) applyProjectSnapshot(JSON.parse(raw));
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const exportJSON = () => {
+    const snap = getProjectSnapshot();
+    const blob = new Blob([JSON.stringify(snap, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "hmi_project.json";
+    a.click();
+  };
+
+  const handleImportJSON = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!applyProjectSnapshot(data)) alert("Неверный формат файла проекта.");
+      } catch { alert("Не удалось прочитать файл. Убедитесь, что это корректный JSON."); }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   // ── Move element to/from shared ──
   const toggleShared = () => {
@@ -730,6 +811,9 @@ export default function HMIEditor() {
     <div style={{display:"flex",height:"100vh",width:"100vw",background:T.bg,color:T.text,fontFamily:"'Courier New',monospace",userSelect:"none",overflow:"hidden"}}
       onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
 
+      {/* Hidden file inputs */}
+      <input ref={importJsonRef} type="file" accept=".json,application/json" onChange={handleImportJSON} style={{display:"none"}}/>
+
       {/* ══ LEFT PANEL ══ */}
       <div style={{width:158,flexShrink:0,background:T.panel,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         {/* Header */}
@@ -832,6 +916,14 @@ export default function HMIEditor() {
             style={{padding:"4px 10px",background:T.greenDim,border:`1px solid ${T.green}`,color:T.green,fontSize:10,fontWeight:700,cursor:"pointer",borderRadius:3}}>
             ⬇ CSV
           </button>
+          <button onClick={exportJSON} title="Сохранить проект в файл"
+            style={{padding:"4px 10px",background:"rgba(88,166,255,0.1)",border:`1px solid ${T.blue}`,color:T.blue,fontSize:10,fontWeight:700,cursor:"pointer",borderRadius:3}}>
+            ⬇ JSON
+          </button>
+          <button onClick={()=>importJsonRef.current?.click()} title="Загрузить проект из файла"
+            style={{padding:"4px 10px",background:"rgba(88,166,255,0.06)",border:`1px solid ${T.blue}44`,color:T.blue,fontSize:10,cursor:"pointer",borderRadius:3}}>
+            ⬆ JSON
+          </button>
           <button onClick={handleExport}
             style={{padding:"5px 12px",background:T.accent,border:"none",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",borderRadius:4}}>
             ⬇ 2×PNG
@@ -923,7 +1015,6 @@ export default function HMIEditor() {
           </div>
         )}
 
-        {/* Status bar */}
         <div style={{height:22,background:T.panel,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 12px",gap:16,fontSize:9,color:T.textDim,flexShrink:0}}>
           <span style={{color:T.accent}}>{cW}×{cH}</span>
           <span>GRID:{GRID}px</span>
@@ -932,6 +1023,10 @@ export default function HMIEditor() {
           <span>ОБЩ:{sharedElements.length}</span>
           <span>СТР:{pages.length}</span>
           {selectedEl&&<span style={{color:T.accent}}>● {selectedEl.type} [{selectedEl.x},{selectedEl.y}] {selectedEl.w}×{selectedEl.h}{selectedIsShared?" 🔗":""}</span>}
+          <div style={{flex:1}}/>
+          {saveStatus==="saved"&&<span style={{color:T.green,fontSize:8,letterSpacing:1}}>● АВТОСОХРАНЕНО</span>}
+          {saveStatus==="error"&&<span style={{color:T.red,fontSize:8}}>⚠ ОШИБКА СОХРАНЕНИЯ</span>}
+          {!saveStatus&&<span style={{color:T.textFaint,fontSize:8}}>💾 localStorage</span>}
         </div>
       </div>
 
