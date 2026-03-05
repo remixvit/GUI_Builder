@@ -33,6 +33,150 @@ function snapGuide(v, guideVals, threshold) {
 let _id = 1;
 const newId = () => `el_${_id++}`;
 
+// ─── BUNDLED SVG ICONS ───────────────────────────────────────────────────────
+// All icons are inline SVG paths — no network requests needed.
+// viewBox is always "0 0 24 24". Fill is injected at render time.
+const BUNDLED_ICONS = {
+  // Network
+  "mdi:wifi": '<path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4 2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/>',
+  "mdi:wifi-off": '<path d="M2.28 3 1 4.27l2.47 2.47C1.6 8.07.96 9.46.96 11c0 .89.21 1.73.58 2.48L3 12c-.27-.6-.04-1.37.5-1.82l1.46 1.46C4.36 12.18 4 13.06 4 14c0 2.21 1.79 4 4 4 .94 0 1.82-.36 2.46-.96l5.27 5.27 1.27-1.27L2.28 3M8 16c-1.1 0-2-.9-2-2 0-.5.18-.96.5-1.28L10.28 16.5c-.32.32-.78.5-1.28.5m-.72-8.28L8 6.5C12.04 6.5 15.5 8.56 17.62 11.62l-1.5 1.5C14.39 10.93 11.38 9 8 9l-.72-.28M22 12c0-5.52-4.48-10-10-10-1.8 0-3.49.49-4.93 1.35l1.43 1.43C9.42 4.28 10.7 4 12 4c4.42 0 8 3.58 8 8 0 1.3-.28 2.58-.78 3.5l1.43 1.43C21.51 15.49 22 13.8 22 12z"/>',
+  "mdi:bluetooth": '<path d="M17.71 7.71 12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29M13 5.83l1.88 1.88L13 9.59V5.83m1.88 10.46L13 18.17v-3.76l1.88 1.88z"/>',
+  "mdi:lan": '<path d="M8 12h8v2H8v-2m-4 6h16v-2H4v2M20 8H4v2h16V8M4 4v2h16V4H4z"/>',
+  "mdi:ethernet": '<path d="M7 19H5c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2h-2v-2h2V7H5v10h2v2m6-3h-2v-3H9l3-4 3 4h-2v3z"/>',
+  // Security
+  "mdi:lock": '<path d="M12 17a2 2 0 0 0 2-2 2 2 0 0 0-2-2 2 2 0 0 0-2 2 2 2 0 0 0 2 2m6-9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h1V6a5 5 0 0 1 5-5 5 5 0 0 1 5 5v2h1m-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3z"/>',
+  "mdi:lock-open": '<path d="M18 1a5 5 0 0 1 5 5v3h-2V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3v2h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2h7V6a5 5 0 0 1 5-5m-6 11a2 2 0 0 0-2 2 2 2 0 0 0 2 2 2 2 0 0 0 2-2 2 2 0 0 0-2-2z"/>',
+  "mdi:key": '<path d="m12.65 10A6 6 0 1 0 7 19h2v2h2v2h4v-4H9a4 4 0 1 1 4-4h-.35l-1 2H15l.35-.71A6 6 0 0 0 12.65 10z"/>',
+  "mdi:shield": '<path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4 6 2.67V11c0 3.7-2.56 7.17-6 8.26C8.56 18.17 6 14.7 6 11V7.67L12 5z"/>',
+  "mdi:door-closed": '<path d="M8 3v18h8V3H8zm6 10h-4v-2h4v2zM2 21h4V3H2v18zm16-18v18h2V3h-2z"/>',
+  "mdi:door-open": '<path d="M19 3H5v18h4v-2H7V5h10v14h-2v2h4V3zm-7 14a1 1 0 0 1-1-1 1 1 0 0 1 1-1 1 1 0 0 1 1 1 1 1 0 0 1-1 1z"/>',
+  // Power
+  "mdi:power": '<path d="M16.56 5.44 15.11 6.89A6.994 6.994 0 0 1 19 13a7 7 0 0 1-7 7A7 7 0 0 1 5 13c0-2.72 1.56-5.08 3.89-6.11L7.44 5.44A9.012 9.012 0 0 0 3 13a9 9 0 0 0 9 9 9 9 0 0 0 9-9c0-3.44-1.93-6.44-4.44-7.56M13 3h-2v10h2V3z"/>',
+  "mdi:power-plug": '<path d="M16 7V3h-2v4H10V3H8v4c-1.1 0-2 .9-2 2v3l3 3v5l2 1 2-1v-5l3-3V9c0-1.1-.9-2-2-2z"/>',
+  "mdi:flash": '<path d="M7 2v11h3v9l7-12h-4l4-8H7z"/>',
+  "mdi:lightning-bolt": '<path d="M7 2v11h3v9l7-12h-4l4-8z"/>',
+  "mdi:battery": '<path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/>',
+  "mdi:electric-switch": '<path d="M14 10h2v1h1v2h-1v1h-2v-1h-4v1H8v-1H7v-2h1v-1h2v1h4v-1M2 14v-4l2-2h7v8H4l-2-2m13-6h5l2 2v4l-2 2h-5V8z"/>',
+  // Sensors
+  "mdi:thermometer": '<path d="M15 13V5a3 3 0 0 0-6 0v8a5 5 0 1 0 6 0M12 4a1 1 0 0 1 1 1v3h-2V5a1 1 0 0 1 1-1z"/>',
+  "mdi:gauge": '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9.5 1.41-1.41L13 5.17V8h-2v4.5c.28-.28.62-.5 1-.5.83 0 1.5.67 1.5 1.5S12.83 15 12 15s-1.5-.67-1.5-1.5c0-.55.3-1.02.74-1.28L9.09 9.09 7.68 10.5 9 11.83V17h6v-5.17l-1.5-1.33z"/>',
+  "mdi:speedometer": '<path d="M12 2C6.48 2 2 6.48 2 12c0 3.36 1.66 6.34 4.22 8.22l1.5-1.5C5.88 17.13 4.5 14.72 4.5 12A7.5 7.5 0 0 1 12 4.5 7.5 7.5 0 0 1 19.5 12c0 2.72-1.38 5.13-3.22 6.72l1.5 1.5C20.34 18.34 22 15.36 22 12c0-5.52-4.48-10-10-10zm-1 5v6l5 3-1 1.73-5.73-3.5V7h1.73z"/>',
+  "mdi:water": '<path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/>',
+  "mdi:water-pump": '<path d="M6 10.5H4.5V9H6v1.5m0 3H4.5v-1.5H6V13.5M7.5 12H6v-1.5h1.5V12m0-3H6V7.5h1.5V9M9 10.5H7.5V9H9v1.5m6 4.5H9V6h6v9m3-1.5h-1.5V12H18v1.5m0-3h-1.5V9H18v1.5m1.5 3H18v-1.5h1.5V13.5m0-3H18V9h1.5v1.5M3 6v12h18V6H3z"/>',
+  "mdi:timer": '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2m4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-0.8 1.3z"/>',
+  "mdi:clock-outline": '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>',
+  // Process / Industrial
+  "mdi:valve": '<path d="M2 12h2V9h4v3h2V6.5l4 4 4-4V12h2V4h-2l-4 4-4-4H2v8m0 8h20v-6h-2v4H4v-4H2v6z"/>',
+  "mdi:valve-open": '<path d="M2 12h2V9h4v3h2V7l4 3 4-3v5h2V4h-2l-4 3-4-3H2v8m0 8h20v-6h-2v4H4v-4H2v6z"/>',
+  "mdi:valve-closed": '<path d="M2 12h2V9h4v3h2V6l4 5 4-5v6h2V4h-2l-4 5-4-5H2v8m0 8h20v-6h-2v4H4v-4H2v6z"/>',
+  "mdi:fan": '<path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0M13.5 2.5c0-1.5-1-2.5-1.5-2.5S10.5 1 10.5 2.5c0 2 1 3.5 1.5 6C12.5 6 13.5 4.5 13.5 2.5zm-7.46 1.04C4.96 2.46 3.79 2.58 3.29 3.08s-.62 1.67.46 2.75C5.38 7.46 7.17 7.84 10 9c-1.16-2.83-1.54-4.62-3.96-5.46zM2.5 10.5c-1.5 0-2.5 1-2.5 1.5S1 13.5 2.5 13.5c2 0 3.5-1 6-1.5-2.5-.5-4-1.5-6-1.5zm1.04 7.46c-1.08 1.08-.96 2.25-.46 2.75s1.67.62 2.75-.46C7.46 18.62 7.84 16.83 9 14c-2.83 1.16-4.62 1.54-5.46 3.96zM13.5 21.5c0 1.5-1 2.5-1.5 2.5s-1.5-1-1.5-2.5c0-2 1-3.5 1.5-6C12.5 18 13.5 19.5 13.5 21.5zm7.46-1.04c1.08-1.08.96-2.25.46-2.75s-1.67-.62-2.75.46C16.54 19.79 16.16 21.58 15 22.75c2.83-1.16 4.62-1.54 5.96-2.29zM21.5 13.5c1.5 0 2.5-1 2.5-1.5s-1-1.5-2.5-1.5c-2 0-3.5 1-6 1.5 2.5.5 4 1.5 6 1.5zm-1.04-7.46c1.08-1.08.96-2.25.46-2.75s-1.67-.62-2.75.46C16.54 5.38 16.16 7.17 15 10c2.83-1.16 4.62-1.54 5.46-3.96z"/>',
+  "mdi:fan-off": '<path d="M4.28 3 3 4.27l3.17 3.17a8.5 8.5 0 0 0-1.16.98C4.38 9.05 4 10.5 4 12s.38 2.95 1.01 3.58A3 3 0 0 0 7 16.5c1 0 2.5-.92 2.5-2.5 0-1.38-.62-2.5-1.38-3.19L4.28 3M12 9c-1.66 0-3 1.34-3 3 0 .35.07.69.18 1L15 9.18c-.31-.11-.65-.18-1-.18m9-6-1.27 1.27-3.17 3.17A8.5 8.5 0 0 1 17 8.42l-8.58 8.58c.69.76 1.81 1.38 3.19 1.38 1.58 0 2.5-1.5 2.5-2.5a3 3 0 0 0-.92-2.66C14.05 12.62 14 11.17 14 10.5S14.62 9 16 9s2.5 1 3.5 2.5S21 14 21 12a3 3 0 0 0-1-2.24V9h-1c0-.83-.5-1.5-1-2l1.27-1.27L21 3m-9 7.5a1.5 1.5 0 0 1 0 3 1.5 1.5 0 0 1 0-3M3 12c0 1.83.5 3.5 1 4.5S6 19 7 19c1.35 0 2.12-.73 2.44-1.44L3 12z"/>',
+  "mdi:engine": '<path d="M7 4v2H4v3H2v6h2v3h3v2h4v-2h2v2h4v-2h3v-3h2v-6h-2V6h-3V4h-4v2h-2V4H7m1 4h8v8H8V8z"/>',
+  "mdi:pump": '<path d="M4 2h4v2h8V2h4v4h-2v2H6V6H4V2m2 8h12v2h2v10H4V12h2v-2m-1 3v6h14v-6H5z"/>',
+  // Alerts / Status
+  "mdi:alert": '<path d="M13 14h-2V9h2m0 9h-2v-2h2M1 21h22L12 2 1 21z"/>',
+  "mdi:alert-circle": '<path d="M13 13h-2V7h2m0 10h-2v-2h2M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z"/>',
+  "mdi:check-circle": '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2m-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>',
+  "mdi:close-circle": '<path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2m5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>',
+  "mdi:information": '<path d="M13 9h-2V7h2m0 10h-2v-6h2m-1-9A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2z"/>',
+  "mdi:bell": '<path d="M21 19v1H3v-1l2-2v-6c0-3.1 2.03-5.83 5-6.71V4a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.29c2.97.88 5 3.61 5 6.71v6l2 2m-7 2a2 2 0 0 1-2 2 2 2 0 0 1-2-2"/>',
+  "mdi:bell-off": '<path d="m2 4.27 1.41-1.41 16.97 16.97-1.41 1.41L17 19.18V21h-.5A2.5 2.5 0 0 1 12 21a2.5 2.5 0 0 1-4.5 0H7v-2l-4-4v-1H1v-4h2c0-1.96.92-3.71 2.35-4.84L2 4.27M7 13H5v2l2.23 2.24A6 6 0 0 1 7 15v-2m7.68 6.72L5 10.05V15c0 .95.2 1.86.56 2.68L14.68 19.72M19 15v-4c0-3.1-2.03-5.83-5-6.71V4a2 2 0 0 0-2-2 2 2 0 0 0-1.53.7L19 15z"/>',
+  // Controls
+  "mdi:play": '<path d="M8 5v14l11-7-11-7z"/>',
+  "mdi:stop": '<path d="M6 6h12v12H6z"/>',
+  "mdi:pause": '<path d="M14 19h4V5h-4M6 19h4V5H6v14z"/>',
+  "mdi:refresh": '<path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>',
+  "mdi:cog": '<path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.36.07-.74.07-1.08s-.03-.73-.07-1.08l2.32-1.82c.22-.17.27-.47.13-.71l-2.2-3.82c-.14-.24-.43-.32-.68-.23l-2.73 1.1c-.57-.44-1.17-.81-1.83-1.09L14.25 2.7c-.04-.26-.27-.45-.53-.45h-4.4c-.26 0-.49.19-.53.45l-.41 2.91c-.66.28-1.26.65-1.83 1.09l-2.73-1.1c-.24-.09-.54-.01-.68.23l-2.2 3.82c-.14.24-.09.54.13.71L3.5 11.5c-.04.35-.07.72-.07 1.08s.03.73.07 1.08l-2.32 1.82c-.22.17-.27.47-.13.71l2.2 3.82c.14.24.43.32.68.23l2.73-1.1c.57.44 1.17.81 1.83 1.09l.41 2.91c.04.26.27.45.53.45h4.4c.26 0 .49-.19.53-.45l.41-2.91c.66-.28 1.26-.65 1.83-1.09l2.73 1.1c.24.09.54.01.68-.23l2.2-3.82c.14-.24.09-.54-.13-.71l-2.32-1.82z"/>',
+  "mdi:tune": '<path d="M3 17v2h6v-2H3M3 5v2h10V5H3m10 16v-2h8v-2h-8v-2h-2v6h2M7 9v2H3v2h4v2h2V9H7m14 4v-2H11v2h10m-6-4h2V7h4V5h-4V3h-2v6z"/>',
+  "mdi:home": '<path d="m10 20v-6h4v6h5v-8h3L12 3 2 12h3v8l5 .01z"/>',
+  "mdi:arrow-up": '<path d="M4 14l8-8 8 8H4z"/>',
+  "mdi:arrow-down": '<path d="M20 10l-8 8-8-8h16z"/>',
+  "mdi:arrow-left": '<path d="M14 4l-8 8 8 8V4z"/>',
+  "mdi:arrow-right": '<path d="M10 4l8 8-8 8V4z"/>',
+  "mdi:menu": '<path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>',
+  // HVAC / Environment
+  "mdi:snowflake": '<path d="m20.79 13.95-2.33.93.71.71-1.41 1.41-.71-.71-.94 2.33-1.86-.74.94-2.33-2.17-.87-1.65 1.65.87 2.17 2.33-.94-.71.71-1.41-1.41.71-.71-2.33-.94.74-1.86 2.33.94.87-2.17-1.65-1.65-2.17.87.94 2.33-1.86.74-.94-2.33-.71.71-1.41-1.41.71-.71-2.33-.93.74-1.86 2.33.94.87-2.17-1.65-1.65-.87 2.17-2.33-.94.94-2.33-.71-.71 1.41-1.41.71.71.93-2.33 1.86.74-.94 2.33 2.17.87 1.65-1.65-.87-2.17-2.33.94-.74-1.86 2.33-.94-.71-.71 1.41-1.41.71.71 2.33-.94.74 1.86-2.33.94-.87 2.17 1.65 1.65 2.17-.87-.94-2.33 1.86-.74.94 2.33.71-.71 1.41 1.41-.71.71 2.33.93-.74 1.86z"/>',
+  "mdi:fire": '<path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32-2.59 2.08-3.61 5.75-2.39 8.9.04.1.08.2.08.33 0 .22-.15.42-.35.5-.23.1-.47.04-.66-.12a.58.58 0 0 1-.14-.17c-1.13-1.43-1.31-3.48-.55-5.12C5.78 10 4.87 12.3 5 14.47c.06.5.12 1 .29 1.5.14.6.41 1.2.71 1.73 1.08 1.73 2.95 2.97 4.96 3.22 2.14.27 4.43-.12 6.07-1.6 1.83-1.66 2.47-4.32 1.53-6.6l-.13-.17zm-5.3 4.24c-.58.25-1.53.5-2.13.05-1.08-.81-.86-2.08-.41-3.08.28-.68.72-1.28.98-1.98.24-.62.27-1.3.09-1.95.41.43.66.99.76 1.55.48-.17.9-.53 1.11-.99.07.42.08.85.01 1.27-.01.16-.04.32-.09.48-.15.5-.46.96-.66 1.45-.4.96-.38 2.15.34 2.2z"/>',
+  "mdi:smoke-detector": '<path d="M12 2A10 10 0 0 0 2 12a10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m0 2a8 8 0 0 1 8 8 8 8 0 0 1-8 8A8 8 0 0 1 4 12 8 8 0 0 1 12 4m0 2a6 6 0 0 0-6 6 6 6 0 0 0 6 6 6 6 0 0 0 6-6 6 6 0 0 0-6-6m0 2a4 4 0 0 1 4 4 4 4 0 0 1-4 4 4 4 0 0 1-4-4 4 4 0 0 1 4-4m0 3a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1z"/>',
+  "mdi:air-conditioner": '<path d="M1 7v2h3v2H1v2h3a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H1m8-2v12h2v-5h2v5h2V5h-6m5 5h-4V7h4v3M18 7a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h3v-2h-3V9h3V7h-3z"/>',
+  "mdi:wind": '<path d="M4 10a1 1 0 0 1 1-1h11a2 2 0 0 0 2-2 2 2 0 0 0-2-2c-.55 0-1.05.22-1.41.59l-1.42-1.42A4 4 0 0 1 20 7a4 4 0 0 1-4 4H5a1 1 0 0 1-1-1m0 4a1 1 0 0 0 1 1h14a2 2 0 0 1 2 2 2 2 0 0 1-2 2c-.55 0-1.05-.22-1.41-.59l-1.42 1.42A4 4 0 0 0 20 21a4 4 0 0 0 4-4 4 4 0 0 0-4-4H5a1 1 0 0 0-1 1z"/>',
+  // Industrial misc
+  "mdi:robot-industrial": '<path d="M13 1v2h-2V1h2m4 4H7v4h10V5M9 7v2H7V7h2m4 0v2h-2V7h2m4 0v2h-2V7h2m-8 5H7v6h2v-2h6v2h2v-6H9m0 2h6v2H9v-2M3 9v4h2V9H3m16 0v4h2V9h-2z"/>',
+  "mdi:factory": '<path d="M4 18V9.5L8 12V9.5l4 2.5V9.5l4 2.5V6H2v12h2m2 0V9.5L12 12V9.5l4 2.5V6h2v12H8m12-6h2v6h-2v-6z"/>',
+  "mdi:wrench": '<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
+  "mdi:tools": '<path d="m15.59 9.15-6.92 6.92c.23.73.05 1.55-.52 2.12-.78.78-1.97.87-2.85.27l1.39-1.39-.7-.7-1.39 1.39c-.6-.88-.51-2.07.27-2.85.57-.57 1.39-.75 2.12-.52l6.92-6.92c-.23-.73-.05-1.55.52-2.12.78-.78 1.97-.87 2.85-.27l-1.39 1.39.7.7 1.39-1.39c.6.88.51 2.07-.27 2.85-.57.57-1.39.75-2.12.52M6 20a1 1 0 0 1-1 1 1 1 0 0 1-1-1 1 1 0 0 1 1-1 1 1 0 0 1 1 1m12.5-9.5-9-9-3.5 3.5 9 9 3.5-3.5z"/>',
+  "mdi:chart-line": '<path d="M16 11.78 20.24 4.45l1.73 1-5.23 9.05-6.51-3.75L5.46 19H22v2H2V3h2v14.54L9.5 8l6.5 3.78z"/>',
+  "mdi:chart-bar": '<path d="M22 21H2V3h2v16h2v-9h4v9h2V6h4v15h2v-5h4v5z"/>',
+  "mdi:database": '<path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.59 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4m6 14c0 .5-2.13 2-6 2s-6-1.5-6-2v-2.23c1.61.78 3.72 1.23 6 1.23s4.39-.45 6-1.23V17m0-4.5c0 .5-2.13 2-6 2s-6-1.5-6-2v-2.23C7.61 11.05 9.72 11.5 12 11.5s4.39-.45 6-1.23V12.5M12 9.5C8.13 9.5 6 8 6 7.5V7c0-.5 2.13-2 6-2s6 1.5 6 2v.5c0 .5-2.13 2-6 2z"/>',
+  "mdi:pressure": '<path d="M12 2a10 10 0 0 0-10 10 10 10 0 0 0 10 10 10 10 0 0 0 10-10A10 10 0 0 0 12 2m0 2a8 8 0 0 1 8 8 8 8 0 0 1-8 8A8 8 0 0 1 4 12 8 8 0 0 1 12 4m0 1-1 5.5c-.36.2-.6.58-.6 1a1.1 1.1 0 0 0 1.6 1 1.1 1.1 0 0 0 .6-1c0-.42-.24-.8-.6-1L12 5z"/>',
+};
+
+const _iconCache = {...BUNDLED_ICONS};
+
+async function fetchIcon(name) {
+  if (!name) return null;
+  if (_iconCache[name] !== undefined) return _iconCache[name];
+  _iconCache[name] = null;
+  try {
+    const [prefix, ...rest] = name.split(":");
+    const res = await fetch(`https://api.iconify.design/${prefix}/${rest.join(":")}.svg?height=24`);
+    if (!res.ok) { _iconCache[name] = null; return null; }
+    const svg = await res.text();
+    _iconCache[name] = svg;
+    return svg;
+  } catch { _iconCache[name] = null; return null; }
+}
+
+// Icon position layouts — returns style for the icon wrapper inside a button
+// pos: "center" | "left" | "right" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | "icon-only"
+function iconWrapperStyle(pos, hasLabel) {
+  const base = {position:"absolute", display:"flex", alignItems:"center", justifyContent:"center", pointerEvents:"none"};
+  if (!hasLabel || pos === "icon-only" || pos === "center") return {...base, inset:0};
+  if (pos === "left")         return {...base, left:8,  top:0, bottom:0, width:24};
+  if (pos === "right")        return {...base, right:8, top:0, bottom:0, width:24};
+  if (pos === "top-left")     return {...base, left:4,  top:4,  width:20, height:20};
+  if (pos === "top-right")    return {...base, right:4, top:4,  width:20, height:20};
+  if (pos === "bottom-left")  return {...base, left:4,  bottom:4, width:20, height:20};
+  if (pos === "bottom-right") return {...base, right:4, bottom:4, width:20, height:20};
+  return {...base, inset:0};
+}
+
+// Label nudge — shift text to make room for side icon
+function labelNudge(pos) {
+  if (pos === "left")  return {paddingLeft:32};
+  if (pos === "right") return {paddingRight:32};
+  return {};
+}
+
+// Reactive icon component — bundled icons render instantly, unknown fetch via Iconify
+function IconSVG({name, size=20, color="#fff"}) {
+  const [svgPath, setSvgPath] = useState(() => _iconCache[name] || null);
+  useEffect(() => {
+    if (!name) return;
+    if (_iconCache[name]) { setSvgPath(_iconCache[name]); return; }
+    fetchIcon(name).then(s => { if (s) setSvgPath(s); });
+  }, [name]);
+
+  if (!svgPath) return <span style={{width:size,height:size,display:"inline-block",opacity:0.25,fontSize:size*0.55,lineHeight:1,textAlign:"center"}}>○</span>;
+
+  // Bundled icons are just path strings — wrap in svg
+  const isBundled = svgPath.startsWith("<path") || svgPath.startsWith("<circle") || svgPath.startsWith("<g");
+  if (isBundled) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={color}
+        style={{display:"block",flexShrink:0,pointerEvents:"none"}}
+        dangerouslySetInnerHTML={{__html: svgPath}}/>
+    );
+  }
+  // Full SVG from Iconify — inject size and color
+  const colored = svgPath
+    .replace(/width="[^"]*"/, `width="${size}"`)
+    .replace(/height="[^"]*"/, `height="${size}"`)
+    .replace(/currentColor/g, color)
+    .replace(/<svg /, `<svg style="display:block" fill="${color}" `);
+  return <span style={{display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,pointerEvents:"none"}} dangerouslySetInnerHTML={{__html: colored}}/>;
+}
+
 // ─── COMPONENT RENDER SYSTEM ─────────────────────────────────────────────────
 // Each component: render(props, active) → JSX
 // props includes user-defined colors, labels etc.
@@ -45,9 +189,22 @@ const DEFS = {
       const bg = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
       const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
       const fg = active ? (p.textActive||"#ffffff") : (p.textIdle||T.textDim);
-      return <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:p.radius??6,display:"flex",alignItems:"center",justifyContent:"center",color:fg,fontSize:p.fontSize||13,fontWeight:600,fontFamily:"monospace",boxShadow:active?`0 0 14px ${bg}66`:"none",pointerEvents:"none",userSelect:"none"}}>
-        {p.label||"BUTTON"}
-      </div>;
+      const iconPos = p.iconPos || "left";
+      const iconOnly = iconPos === "icon-only";
+      const hasLabel = !iconOnly && !!(p.label || "BUTTON");
+      return (
+        <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:p.radius??6,
+          display:"flex",alignItems:"center",justifyContent:"center",position:"relative",
+          color:fg,fontSize:p.fontSize||13,fontWeight:600,fontFamily:"monospace",
+          boxShadow:active?`0 0 14px ${bg}66`:"none",pointerEvents:"none",userSelect:"none"}}>
+          {p.iconName && (
+            <div style={iconWrapperStyle(iconPos, hasLabel)}>
+              <IconSVG name={p.iconName} size={p.iconSize||18} color={fg}/>
+            </div>
+          )}
+          {!iconOnly && <span style={{position:"relative",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"BUTTON"}</span>}
+        </div>
+      );
     },
   },
   button_round: {
@@ -56,9 +213,18 @@ const DEFS = {
       const bg = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
       const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
       const fg = active ? (p.textActive||"#ffffff") : (p.textIdle||T.textDim);
-      return <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:fg,fontSize:p.fontSize||11,fontWeight:700,fontFamily:"monospace",boxShadow:active?`0 0 16px ${bg}88`:"none",pointerEvents:"none",userSelect:"none"}}>
-        {p.label||"OK"}
-      </div>;
+      const iconOnly = !p.label || p.iconPos === "icon-only";
+      return (
+        <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:"50%",
+          display:"flex",alignItems:"center",justifyContent:"center",position:"relative",
+          color:fg,fontSize:p.fontSize||11,fontWeight:700,fontFamily:"monospace",
+          boxShadow:active?`0 0 16px ${bg}88`:"none",pointerEvents:"none",userSelect:"none"}}>
+          {p.iconName
+            ? <IconSVG name={p.iconName} size={p.iconSize||22} color={fg}/>
+            : (p.label||"OK")
+          }
+        </div>
+      );
     },
   },
   toggle_switch: {
@@ -214,6 +380,125 @@ const DEFS = {
       );
     },
   },
+  toggle_2pos: {
+    label:"2-Pos Toggle", icon:"⊣", w:140, h:44,
+    render(p, active) {
+      const posLeft = !active;
+      const colorLeft  = posLeft  ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
+      const colorRight = !posLeft ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
+      const bdLeft  = posLeft  ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
+      const bdRight = !posLeft ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
+      const fgLeft  = posLeft  ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const fgRight = !posLeft ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const labelL = p.labelLeft  || "OFF";
+      const labelR = p.labelRight || "ON";
+      const sz = p.iconSize||16;
+      return (
+        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",pointerEvents:"none",gap:2}}>
+          <div style={{flex:1,height:"100%",background:colorLeft,border:`2px solid ${bdLeft}`,borderRadius:`${p.radius??6}px 0 0 ${p.radius??6}px`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,color:fgLeft,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:posLeft?`0 0 12px ${colorLeft}55`:"none",transition:"all 0.15s"}}>
+            {p.iconName && posLeft && <IconSVG name={p.iconName} size={sz} color={fgLeft}/>}
+            {labelL}
+          </div>
+          <div style={{width:3,height:"60%",background:posLeft?bdLeft:bdRight,borderRadius:1,flexShrink:0,opacity:0.5}}/>
+          <div style={{flex:1,height:"100%",background:colorRight,border:`2px solid ${bdRight}`,borderRadius:`0 ${p.radius??6}px ${p.radius??6}px 0`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,color:fgRight,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:!posLeft?`0 0 12px ${colorRight}55`:"none",transition:"all 0.15s"}}>
+            {p.iconName && !posLeft && <IconSVG name={p.iconName} size={sz} color={fgRight}/>}
+            {labelR}
+          </div>
+        </div>
+      );
+    },
+  },
+  button_halo: {
+    label:"Halo Button", icon:"⊙", w:120, h:48,
+    render(p, active) {
+      const bg   = active ? (p.colorActive||T.accent) : (p.colorIdle||"#0d1117");
+      const halo = active ? (p.colorActive||T.accent) : (p.haloIdle||"#374151");
+      const fg   = active ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const haloW = p.haloWidth ?? 3;
+      const haloBlur = active ? (p.haloBlur ?? 14) : 0;
+      const iconPos = p.iconPos || "left";
+      const iconOnly = iconPos === "icon-only";
+      const hasLabel = !iconOnly;
+      return (
+        <div style={{width:"100%",height:"100%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
+          <div style={{position:"absolute",inset:-haloW-2,borderRadius:(p.radius??6)+haloW+2,border:`${haloW}px solid ${halo}`,boxShadow:active?`0 0 ${haloBlur}px ${halo}, 0 0 ${haloBlur*2}px ${halo}44`:"none",transition:"all 0.2s",pointerEvents:"none"}}/>
+          <div style={{width:"100%",height:"100%",background:bg,borderRadius:p.radius??6,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",color:fg,fontSize:p.fontSize||13,fontWeight:700,fontFamily:"monospace",letterSpacing:1,transition:"all 0.2s"}}>
+            {p.iconName && <div style={iconWrapperStyle(iconPos, hasLabel)}><IconSVG name={p.iconName} size={p.iconSize||18} color={fg}/></div>}
+            {!iconOnly && <span style={{position:"relative",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"START"}</span>}
+          </div>
+        </div>
+      );
+    },
+  },
+  alarm_indicator: {
+    label:"Alarm", icon:"⚠", w:160, h:48,
+    render(p, active) {
+      const c  = active ? (p.colorActive||T.red) : (p.colorIdle||"#1e2430");
+      const bd = active ? (p.colorActive||T.red) : (p.borderIdle||"#374151");
+      const fg = active ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const icon = p.icon || "⚠";
+      return (
+        <div style={{width:"100%",height:"100%",background:c,border:`2px solid ${bd}`,borderRadius:p.radius??4,display:"flex",alignItems:"center",gap:8,padding:"0 12px",boxSizing:"border-box",
+          boxShadow:active?`0 0 18px ${c}88, inset 0 0 12px ${c}22`:"none",
+          animation:active&&p.blink!==false?"alarmBlink 0.9s ease-in-out infinite":"none",
+          pointerEvents:"none",userSelect:"none"}}>
+          <span style={{fontSize:p.iconSize||18,lineHeight:1,flexShrink:0}}>{icon}</span>
+          <div style={{flex:1,overflow:"hidden"}}>
+            <div style={{color:fg,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.label||"ALARM"}</div>
+            {p.subtext&&<div style={{color:active?`${fg}aa`:T.textFaint,fontSize:9,fontFamily:"monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>{p.subtext}</div>}
+          </div>
+          {/* Status dot */}
+          <div style={{width:8,height:8,borderRadius:"50%",background:active?"#fff":T.textFaint,flexShrink:0,boxShadow:active?"0 0 6px #fff":""}}/>
+        </div>
+      );
+    },
+  },
+  ring_progress: {
+    label:"Ring", icon:"◎", w:110, h:110,
+    render(p, active) {
+      const value   = active ? (p.value ?? 72)   : (p.idleValue ?? 0);
+      const minVal  = p.minVal ?? 0;
+      const maxVal  = p.maxVal ?? 100;
+      const pct     = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
+      const r       = 42;
+      const cx = 55, cy = 55;
+      const circ    = 2 * Math.PI * r;
+      const dash    = pct * circ;
+      const gap     = circ - dash;
+      const trackC  = p.trackColor  || "#1e2430";
+      const fillC   = active ? (p.colorActive || T.accent) : (p.colorIdle || "#374151");
+      const fgC     = active ? (p.colorActive || T.accent) : (p.textIdle  || T.textDim);
+      const bgC     = p.bgColor || "transparent";
+      const sw      = p.strokeWidth ?? 9;
+      // Rotate so arc starts from top (-90deg)
+      return (
+        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:bgC,borderRadius:p.radius??6,pointerEvents:"none"}}>
+          <svg width={cx*2} height={cy*2}>
+            {/* Track */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackC} strokeWidth={sw}/>
+            {/* Fill arc */}
+            <circle cx={cx} cy={cy} r={r} fill="none" stroke={fillC} strokeWidth={sw}
+              strokeDasharray={`${dash} ${gap}`}
+              strokeLinecap={p.linecap==="butt"?"butt":"round"}
+              transform={`rotate(-90 ${cx} ${cy})`}
+              style={{filter:active?`drop-shadow(0 0 5px ${fillC}88)`:"none",transition:"stroke-dasharray 0.3s"}}/>
+            {/* Center value */}
+            <text x={cx} y={cy+1} textAnchor="middle" dominantBaseline="middle"
+              fill={fgC} fontSize={p.fontSize||18} fontFamily="monospace" fontWeight={700} letterSpacing={1}>
+              {active ? value : "--"}
+            </text>
+            {/* Unit label */}
+            {p.unit && <text x={cx} y={cy+16} textAnchor="middle" fill={fgC} fontSize={9} fontFamily="monospace" opacity={0.65}>{p.unit}</text>}
+            {/* Min/max dots */}
+            {p.showMinMax !== false && <>
+              <circle cx={cx - r} cy={cy} r={3} fill={trackC} stroke={fillC} strokeWidth={1} opacity={0.5}/>
+              <circle cx={cx + r} cy={cy} r={3} fill={trackC} stroke={fillC} strokeWidth={1} opacity={0.5}/>
+            </>}
+          </svg>
+        </div>
+      );
+    },
+  },
   data_table: {
     label:"Table", icon:"≡", w:240, h:130,
     render(p, active) {
@@ -350,8 +635,170 @@ function PropField({label, value, onChange, type="text", min, max, placeholder})
   );
 }
 
+// ─── ICON PICKER ──────────────────────────────────────────────────────────────
+// Suggested icon sets relevant for industrial HMI
+const ICON_SUGGESTIONS = [
+  // Network / Connectivity
+  "mdi:wifi","mdi:wifi-off","mdi:bluetooth","mdi:lan","mdi:ethernet",
+  // Security / Access
+  "mdi:lock","mdi:lock-open","mdi:key","mdi:shield","mdi:door-closed","mdi:door-open",
+  // Power / Energy
+  "mdi:power","mdi:power-plug","mdi:battery","mdi:flash","mdi:lightning-bolt",
+  "mdi:electric-switch","mdi:electric-switch-closed",
+  // Sensors / Measurement
+  "mdi:thermometer","mdi:gauge","mdi:speedometer","mdi:water","mdi:water-pump",
+  "mdi:pressure","mdi:weight","mdi:timer","mdi:clock-outline",
+  // Process / Valves
+  "mdi:valve","mdi:valve-open","mdi:valve-closed","mdi:pipe","mdi:pump",
+  "mdi:fan","mdi:fan-off","mdi:engine","mdi:engine-off",
+  // Alerts / Status
+  "mdi:alert","mdi:alert-circle","mdi:check-circle","mdi:close-circle",
+  "mdi:information","mdi:bell","mdi:bell-off",
+  // Controls / UI
+  "mdi:play","mdi:stop","mdi:pause","mdi:refresh","mdi:cog","mdi:tune",
+  "mdi:menu","mdi:home","mdi:arrow-up","mdi:arrow-down","mdi:arrow-left","mdi:arrow-right",
+  // HVAC / Environment
+  "mdi:air-conditioner","mdi:snowflake","mdi:fire","mdi:smoke-detector",
+  "mdi:hvac","mdi:radiator","mdi:wind",
+  // Misc industrial
+  "mdi:robot-industrial","mdi:factory","mdi:wrench","mdi:tools","mdi:hammer",
+  "mdi:chart-line","mdi:chart-bar","mdi:database",
+];
+
+const ICON_POS_OPTIONS = [
+  {val:"left",       label:"← Слева"},
+  {val:"center",     label:"⊙ Центр"},
+  {val:"right",      label:"→ Справа"},
+  {val:"top-left",   label:"↖ Угол ЛВ"},
+  {val:"top-right",  label:"↗ Угол ПВ"},
+  {val:"bottom-left",label:"↙ Угол ЛН"},
+  {val:"bottom-right",label:"↘ Угол ПН"},
+  {val:"icon-only",  label:"⊡ Только иконка"},
+];
+
+function IconPicker({value, iconPos, onIconChange, onPosChange, onSizeChange, iconSize}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef(null);
+
+  // Search Iconify API
+  const doSearch = useCallback(async (q) => {
+    if (!q.trim()) { setResults([]); return; }
+    setLoading(true);
+    try {
+      const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=40&prefixes=mdi,tabler,ph,lucide`);
+      const data = await res.json();
+      setResults(data.icons || []);
+    } catch { setResults([]); }
+    setLoading(false);
+  }, []);
+
+  const onQueryChange = (v) => {
+    setQuery(v);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => doSearch(v), 400);
+  };
+
+  const displayList = query.trim() ? results : ICON_SUGGESTIONS;
+
+  return (
+    <div style={{marginBottom:10}}>
+      <div style={{color:T.textDim,fontSize:11,marginBottom:5,letterSpacing:0.5}}>ИКОНКА (Iconify)</div>
+
+      {/* Current icon preview + clear */}
+      <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:6}}>
+        <div style={{width:36,height:36,background:T.bg,border:`1px solid ${value?T.blue:T.border}`,borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {value ? <IconSVG name={value} size={20} color={T.text}/> : <span style={{color:T.textFaint,fontSize:10}}>—</span>}
+        </div>
+        <div style={{flex:1,overflow:"hidden"}}>
+          <div style={{color:value?T.blue:T.textFaint,fontSize:10,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+            {value||"не выбрана"}
+          </div>
+        </div>
+        {value && <div onClick={()=>onIconChange(undefined)} title="Убрать иконку"
+          style={{color:T.red,cursor:"pointer",fontSize:14,padding:"2px 5px",borderRadius:2,flexShrink:0}}>✕</div>}
+      </div>
+
+      {/* Toggle picker */}
+      <button onClick={()=>setOpen(v=>!v)}
+        style={{width:"100%",padding:"5px 8px",background:open?"rgba(88,166,255,0.1)":T.bg,border:`1px solid ${open?T.blue:T.border}`,color:open?T.blue:T.textDim,fontSize:11,cursor:"pointer",borderRadius:3,textAlign:"left",display:"flex",alignItems:"center",gap:6,marginBottom:open?6:0}}>
+        <span>{open?"▲":"▼"}</span>
+        <span>{open?"Закрыть поиск":"🔍 Выбрать иконку..."}</span>
+      </button>
+
+      {open && (
+        <div style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:4,padding:8}}>
+          {/* Search input */}
+          <input
+            autoFocus
+            value={query} onChange={e=>onQueryChange(e.target.value)}
+            placeholder="wifi, lock, valve, pump..."
+            style={{width:"100%",background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"5px 8px",fontSize:11,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box",marginBottom:6,outline:"none"}}
+          />
+          {loading && <div style={{color:T.textDim,fontSize:10,textAlign:"center",padding:4}}>Поиск...</div>}
+          {!loading && displayList.length === 0 && query && (
+            <div style={{color:T.textFaint,fontSize:10,textAlign:"center",padding:4}}>Ничего не найдено</div>
+          )}
+          {/* Icon grid */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:3,maxHeight:180,overflowY:"auto"}}>
+            {displayList.map(name => (
+              <div key={name} onClick={()=>{onIconChange(name);setOpen(false);}}
+                title={name}
+                style={{width:"100%",aspectRatio:"1",background:value===name?T.accentBg:T.panel2,border:`1px solid ${value===name?T.accent:T.border}`,borderRadius:3,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:3,boxSizing:"border-box"}}
+                onMouseEnter={e=>{if(value!==name)e.currentTarget.style.borderColor=T.blue;}}
+                onMouseLeave={e=>{if(value!==name)e.currentTarget.style.borderColor=T.border;}}>
+                <IconSVG name={name} size={16} color={value===name?T.accent:T.textDim}/>
+              </div>
+            ))}
+          </div>
+          {!query && <div style={{color:T.textFaint,fontSize:9,textAlign:"center",marginTop:4}}>Популярные · введите запрос для поиска</div>}
+        </div>
+      )}
+
+      {/* Position selector — only if icon is set */}
+      {value && (
+        <>
+          <div style={{color:T.textDim,fontSize:10,marginTop:8,marginBottom:4}}>Расположение</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3}}>
+            {ICON_POS_OPTIONS.map(opt=>(
+              <div key={opt.val} onClick={()=>onPosChange(opt.val)}
+                style={{padding:"4px 6px",background:iconPos===opt.val?T.accentBg:T.panel2,border:`1px solid ${iconPos===opt.val?T.accent:T.border}`,borderRadius:3,cursor:"pointer",fontSize:10,color:iconPos===opt.val?T.accent:T.textDim,textAlign:"center",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                {opt.label}
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:6}}>
+            <div style={{color:T.textDim,fontSize:10,marginBottom:3}}>Размер иконки</div>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <input type="range" min={10} max={40} value={iconSize||18}
+                onChange={e=>onSizeChange(parseInt(e.target.value))}
+                style={{flex:1,accentColor:T.accent}}/>
+              <span style={{color:T.text,fontSize:11,fontFamily:"monospace",width:24,textAlign:"right"}}>{iconSize||18}</span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function HMIEditor() {
+  // Inject CSS animations
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.id = "hmi-editor-styles";
+    style.textContent = `
+      @keyframes alarmBlink {
+        0%,100% { opacity: 1; }
+        50% { opacity: 0.35; }
+      }
+    `;
+    if (!document.getElementById("hmi-editor-styles")) document.head.appendChild(style);
+    return () => { const el = document.getElementById("hmi-editor-styles"); if(el) el.remove(); };
+  }, []);
   // Canvas settings
   const [resolution, setResolution] = useState(RESOLUTIONS[2]);
   const [customW, setCustomW] = useState(800);
@@ -396,6 +843,8 @@ export default function HMIEditor() {
   const draggingGuideRef      = useRef(null); // { axis:"h"|"v", idx, startMouse, startVal }
   useEffect(() => { guidesRef.current = guides; }, [guides]);
   const GUIDE_SNAP = 8; // px in canvas coords — snap to guide within this distance
+  // Guide coordinate editing popup
+  const [editingGuide, setEditingGuide] = useState(null); // { axis, idx, value, screenX, screenY }
 
   // Zoom & pan
   const [zoom, setZoom] = useState(1);
@@ -409,6 +858,11 @@ export default function HMIEditor() {
   const [showCoords, setShowCoords] = useState(false);
   const [showPageMgr, setShowPageMgr] = useState(false);
   const [activeTab, setActiveTab] = useState("props"); // props|colors
+  const [showPiP, setShowPiP] = useState(false); // Picture-in-Picture navigator
+
+  // Snap lines: edges of other elements shown while dragging
+  const [snapLines, setSnapLines] = useState([]); // [{type:"v"|"h", val, from, to}]
+  const snapLinesRef = useRef([]);
 
   const canvasRef = useRef(null);
   const dragType = useRef(null);
@@ -707,6 +1161,9 @@ export default function HMIEditor() {
       const allEls = [...elementsRef.current, ...sharedRef.current];
       const gv = guidesRef.current.v;
       const gh = guidesRef.current.h;
+      const newSnapLines = [];
+      const SNAP_EDGE_THR = 6; // canvas px threshold for element-to-element snap
+
       dr.ids.forEach(eid => {
         const startPos = dr.startPositions[eid];
         if (!startPos) return;
@@ -727,6 +1184,37 @@ export default function HMIEditor() {
           if (Math.abs(rawY - g) <= thr)            { ny = g;        break; }
           if (Math.abs(rawY + el.h - g) <= thr)     { ny = g - el.h; break; }
         }
+        // Element-to-element snap lines
+        const draggingIds = new Set(dr.ids);
+        const others = allEls.filter(x => !draggingIds.has(x.id));
+        for (const o of others) {
+          const edges = [o.x, o.x + o.w, o.x + o.w/2];
+          const edgesY = [o.y, o.y + o.h, o.y + o.h/2];
+          for (const ex of edges) {
+            if (Math.abs(rawX - ex) <= SNAP_EDGE_THR) {
+              nx = ex;
+              newSnapLines.push({type:"v", val:ex, from:Math.min(ny, o.y), to:Math.max(ny+el.h, o.y+o.h)});
+              break;
+            }
+            if (Math.abs(rawX + el.w - ex) <= SNAP_EDGE_THR) {
+              nx = ex - el.w;
+              newSnapLines.push({type:"v", val:ex, from:Math.min(ny, o.y), to:Math.max(ny+el.h, o.y+o.h)});
+              break;
+            }
+          }
+          for (const ey of edgesY) {
+            if (Math.abs(rawY - ey) <= SNAP_EDGE_THR) {
+              ny = ey;
+              newSnapLines.push({type:"h", val:ey, from:Math.min(nx, o.x), to:Math.max(nx+el.w, o.x+o.w)});
+              break;
+            }
+            if (Math.abs(rawY + el.h - ey) <= SNAP_EDGE_THR) {
+              ny = ey - el.h;
+              newSnapLines.push({type:"h", val:ey, from:Math.min(nx, o.x), to:Math.max(nx+el.w, o.x+o.w)});
+              break;
+            }
+          }
+        }
         const updater = x => ({...x, x: nx, y: ny});
         // check if shared
         if (sharedRef.current.find(x => x.id === eid)) {
@@ -735,6 +1223,8 @@ export default function HMIEditor() {
           setElements(prev => prev.map(x => x.id === eid ? updater(x) : x));
         }
       });
+      snapLinesRef.current = newSnapLines;
+      setSnapLines(newSnapLines);
     }
 
     if (rs) {
@@ -786,6 +1276,9 @@ export default function HMIEditor() {
 
     const wasDrag = !!(draggingRef.current || resizingRef.current);
     wasDraggingRef.current = wasDrag;
+    // Clear snap lines when drag ends
+    snapLinesRef.current = [];
+    setSnapLines([]);
     if (wasDrag) pushHistory(elementsRef.current, sharedRef.current);
 
     // Finish marquee — select all elements inside rect
@@ -1270,6 +1763,8 @@ export default function HMIEditor() {
               <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="BUTTON"/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={48}/>
               <PropField label="Радиус скругления" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={50}/>
+              <IconPicker value={p.iconName} iconPos={p.iconPos||"left"} iconSize={p.iconSize||18}
+                onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
             </>}
             {selectedEl.type==="label_text" && <>
               <PropField label="Текст" value={p.text} onChange={v=>up("text",v)} placeholder="LABEL"/>
@@ -1324,6 +1819,46 @@ export default function HMIEditor() {
               <PropField label='Строки (JSON [[...],[...]])' value={p.rows} onChange={v=>up("rows",v)} placeholder='[["Temp","42.5","°C"]]'/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={20}/>
               <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={16}/>
+            </>}
+            {selectedEl.type==="toggle_2pos" && <>
+              <PropField label="Надпись LEFT (idle)" value={p.labelLeft} onChange={v=>up("labelLeft",v)} placeholder="OFF"/>
+              <PropField label="Надпись RIGHT (active)" value={p.labelRight} onChange={v=>up("labelRight",v)} placeholder="ON"/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={24}/>
+              <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={30}/>
+              <IconPicker value={p.iconName} iconPos={p.iconPos||"center"} iconSize={p.iconSize||16}
+                onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
+            </>}
+            {selectedEl.type==="button_halo" && <>
+              <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="START"/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={36}/>
+              <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={50}/>
+              <PropField label="Толщина обода (px)" value={p.haloWidth} onChange={v=>up("haloWidth",v)} type="number" min={1} max={12}/>
+              <PropField label="Размытие свечения (px)" value={p.haloBlur} onChange={v=>up("haloBlur",v)} type="number" min={0} max={40}/>
+              <IconPicker value={p.iconName} iconPos={p.iconPos||"left"} iconSize={p.iconSize||18}
+                onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
+            </>}
+            {selectedEl.type==="alarm_indicator" && <>
+              <PropField label="Текст" value={p.label} onChange={v=>up("label",v)} placeholder="ALARM"/>
+              <PropField label="Подтекст" value={p.subtext} onChange={v=>up("subtext",v)} placeholder="Fault code 0x04"/>
+              <PropField label="Иконка (emoji)" value={p.icon} onChange={v=>up("icon",v)} placeholder="⚠"/>
+              <PropField label="Размер иконки" value={p.iconSize} onChange={v=>up("iconSize",v)} type="number" min={8} max={36}/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={20}/>
+              <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={20}/>
+              <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{color:T.textDim,fontSize:9}}>Мигание (active)</div>
+                <div onClick={()=>up("blink",p.blink===false?true:false)} style={{width:28,height:16,background:p.blink!==false?T.accent:"#1e2430",border:`1px solid ${p.blink!==false?T.accent:"#374151"}`,borderRadius:8,cursor:"pointer",position:"relative"}}>
+                  <div style={{position:"absolute",top:2,left:p.blink!==false?12:2,width:10,height:10,borderRadius:"50%",background:p.blink!==false?"#fff":"#555"}}/>
+                </div>
+              </div>
+            </>}
+            {selectedEl.type==="ring_progress" && <>
+              <PropField label="Значение (active)" value={p.value} onChange={v=>up("value",v)} type="number" placeholder="72"/>
+              <PropField label="Значение (idle)" value={p.idleValue} onChange={v=>up("idleValue",v)} type="number" placeholder="0"/>
+              <PropField label="Минимум" value={p.minVal} onChange={v=>up("minVal",v)} type="number" placeholder="0"/>
+              <PropField label="Максимум" value={p.maxVal} onChange={v=>up("maxVal",v)} type="number" placeholder="100"/>
+              <PropField label="Единица (unit)" value={p.unit} onChange={v=>up("unit",v)} placeholder="%"/>
+              <PropField label="Толщина кольца" value={p.strokeWidth} onChange={v=>up("strokeWidth",v)} type="number" min={2} max={24}/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={36}/>
             </>}
 
             {/* Toggle shared */}
@@ -1400,6 +1935,34 @@ export default function HMIEditor() {
               <ColorRow label="Чередование строк" propKey="altBg" value={p.altBg} onChange={up} defaultVal="rgba(255,255,255,0.025)"/>
               <ColorRow label="Фон таблицы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="#0a0e14"/>
             </>}
+            {selectedEl.type==="toggle_2pos" && <>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
+              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
+              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+            </>}
+            {selectedEl.type==="button_halo" && <>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#0d1117"/>
+              <ColorRow label="Active фон/обод" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
+              <ColorRow label="Idle обод" propKey="haloIdle" value={p.haloIdle} onChange={up} defaultVal="#374151"/>
+            </>}
+            {selectedEl.type==="alarm_indicator" && <>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
+              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.red}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
+              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+            </>}
+            {selectedEl.type==="ring_progress" && <>
+              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Трек (фон кольца)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal="#1e2430"/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Фон" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="transparent"/>
+            </>}
           </div>
         )}
 
@@ -1466,7 +2029,6 @@ export default function HMIEditor() {
         {/* Header */}
         <div style={{padding:"12px 14px 10px",borderBottom:`1px solid ${T.border}`}}>
           <div style={{color:T.accent,fontSize:15,fontWeight:700,letterSpacing:2}}>HMI EDITOR</div>
-          <div style={{color:T.textDim,fontSize:11,marginTop:2}}>DWIN DGUS TOOL</div>
         </div>
 
         {/* Resolution */}
@@ -1645,6 +2207,7 @@ export default function HMIEditor() {
         {/* Canvas */}
         <div ref={canvasAreaRef} style={{flex:1,overflow:"hidden",padding:20,display:"flex",gap:20,justifyContent:"center",alignItems:"flex-start",position:"relative",cursor:middlePanRef.current?"grabbing":"default"}}
           onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+          onClick={()=>{ if(editingGuide) setEditingGuide(null); }}
           onMouseDown={e=>{ if(e.button===1){e.preventDefault();middlePanRef.current={startX:e.clientX,startY:e.clientY,startPan:{...panRef.current}};} }}>
           {preview==="split" ? (
             <div style={{display:"flex",gap:14,alignItems:"flex-start",transform:`translate(${pan.x}px,${pan.y}px)`}}>
@@ -1724,11 +2287,24 @@ export default function HMIEditor() {
                   <rect width={dW} height={RULER} fill="#0a0e14"/>
                   <line x1={0} y1={RULER-1} x2={dW} y2={RULER-1} stroke={T.border} strokeWidth={1}/>
                   {hTicks}
+                  {/* Center mark on top ruler */}
+                  {(() => { const cx = (cW/2)*scale; return <g key="center-h">
+                    <line x1={cx} y1={0} x2={cx} y2={RULER} stroke="#e3b341" strokeWidth={1} opacity={0.6} strokeDasharray="2,2"/>
+                    <polygon points={`${cx},${RULER} ${cx-4},${RULER-7} ${cx+4},${RULER-7}`} fill="#e3b341" opacity={0.7}/>
+                  </g>; })()}
                   {/* Vertical guide markers on top ruler */}
-                  {guides.v.map((g, i) => (
-                    <line key={i} x1={g*scale} y1={0} x2={g*scale} y2={RULER} stroke="#58a6ff" strokeWidth={2} opacity={0.8}
-                      style={{cursor:"ew-resize"}} onMouseDown={e=>{e.stopPropagation();onGuideDown("v",i)(e);}}/>
-                  ))}
+                  {guides.v.map((g, i) => {
+                    const sx = g*scale;
+                    const labelText = String(g);
+                    const labelW = labelText.length * 6 + 4;
+                    return <g key={i} style={{cursor:"ew-resize"}}
+                      onMouseDown={e=>{e.stopPropagation();onGuideDown("v",i)(e);}}
+                      onClick={e=>{e.stopPropagation();const rulerEl=e.currentTarget.closest("svg").getBoundingClientRect();setEditingGuide({axis:"v",idx:i,value:g,screenX:rulerEl.left+sx,screenY:rulerEl.top+RULER+4});}}>
+                      <line x1={sx} y1={0} x2={sx} y2={RULER} stroke="#58a6ff" strokeWidth={2} opacity={0.9}/>
+                      <rect x={sx+2} y={1} width={labelW} height={12} rx={2} fill="#0d1f3c" opacity={0.9}/>
+                      <text x={sx+4} y={11} fill="#58a6ff" fontSize={9} fontFamily="monospace" fontWeight="700">{labelText}</text>
+                    </g>;
+                  })}
                 </svg>
                 {/* Vertical ruler (left) */}
                 <svg width={RULER} height={dH} style={{position:"absolute",left:0,top:RULER,zIndex:20,cursor:"crosshair",userSelect:"none"}}
@@ -1736,11 +2312,23 @@ export default function HMIEditor() {
                   <rect width={RULER} height={dH} fill="#0a0e14"/>
                   <line x1={RULER-1} y1={0} x2={RULER-1} y2={dH} stroke={T.border} strokeWidth={1}/>
                   {vTicks}
+                  {/* Center mark on left ruler */}
+                  {(() => { const cy = (cH/2)*scale; return <g key="center-v">
+                    <line x1={0} y1={cy} x2={RULER} y2={cy} stroke="#e3b341" strokeWidth={1} opacity={0.6} strokeDasharray="2,2"/>
+                    <polygon points={`${RULER},${cy} ${RULER-7},${cy-4} ${RULER-7},${cy+4}`} fill="#e3b341" opacity={0.7}/>
+                  </g>; })()}
                   {/* Horizontal guide markers on left ruler */}
-                  {guides.h.map((g, i) => (
-                    <line key={i} x1={0} y1={g*scale} x2={RULER} y2={g*scale} stroke="#58a6ff" strokeWidth={2} opacity={0.8}
-                      style={{cursor:"ns-resize"}} onMouseDown={e=>{e.stopPropagation();onGuideDown("h",i)(e);}}/>
-                  ))}
+                  {guides.h.map((g, i) => {
+                    const sy = g*scale;
+                    const labelText = String(g);
+                    return <g key={i} style={{cursor:"ns-resize"}}
+                      onMouseDown={e=>{e.stopPropagation();onGuideDown("h",i)(e);}}
+                      onClick={e=>{e.stopPropagation();const rulerEl=e.currentTarget.closest("svg").getBoundingClientRect();setEditingGuide({axis:"h",idx:i,value:g,screenX:rulerEl.left+RULER+4,screenY:rulerEl.top+sy});}}>
+                      <line x1={0} y1={sy} x2={RULER} y2={sy} stroke="#58a6ff" strokeWidth={2} opacity={0.9}/>
+                      <text x={2} y={sy-2} fill="#58a6ff" fontSize={9} fontFamily="monospace" fontWeight="700"
+                        transform={`rotate(-90,${RULER/2},${sy-2})`}>{labelText}</text>
+                    </g>;
+                  })}
                 </svg>
                 {/* Canvas offset by ruler size */}
                 <div style={{width:dW,height:dH,position:"relative",flexShrink:0,marginLeft:RULER,marginTop:RULER}}>
@@ -1749,12 +2337,34 @@ export default function HMIEditor() {
                     onDrop={onCanvasDrop} onDragOver={e=>e.preventDefault()}
                     onMouseDown={onCanvasMouseDown}
                     onClick={e=>{ if(wasDraggingRef.current){wasDraggingRef.current=false;return;} }}
-                    style={{width:cW,height:cH,background:bgColor,position:"absolute",top:0,left:0,backgroundImage:bgImage?`url(${bgImage})`:`radial-gradient(circle,#1e2430 1px,transparent 1px)`,backgroundSize:bgImage?"cover":`${GRID*4}px ${GRID*4}px`,backgroundPosition:"center",border:`1px solid ${T.border}`,transform:`scale(${scale})`,transformOrigin:"top left",cursor:"default",userSelect:"none"}}>
+                    style={{width:cW,height:cH,background:bgColor,position:"absolute",top:0,left:0,
+                      backgroundImage: bgImage ? `url(${bgImage})` : (() => {
+                        // Adaptive grid: fine grid + coarse grid overlay
+                        const gridPx = GRID * scale;
+                        const coarsePx = GRID * 5 * scale;
+                        if (gridPx < 4) return `radial-gradient(circle,#1e2430 1px,transparent 1px)`;
+                        return [
+                          `radial-gradient(circle, #2a3a4a ${gridPx < 6 ? 0.8 : 1}px, transparent 1px)`,
+                          `radial-gradient(circle, #3a4a5a 1.5px, transparent 1.5px)`,
+                        ].join(", ");
+                      })(),
+                      backgroundSize: bgImage ? "cover" : (() => {
+                        const gridPx = GRID * scale;
+                        const coarsePx = GRID * 5 * scale;
+                        if (gridPx < 4) return `${GRID*4}px ${GRID*4}px`;
+                        return `${gridPx}px ${gridPx}px, ${coarsePx}px ${coarsePx}px`;
+                      })(),
+                      backgroundPosition:"center",border:`1px solid ${T.border}`,transform:`scale(${scale})`,transformOrigin:"top left",cursor:"default",userSelect:"none"}}>
                     {sharedElements.map(el=>renderEl(el,undefined,true))}
                     {elements.map(el=>renderEl(el,undefined,false))}
                     {/* Marquee selection rect */}
                     {marquee && marquee.w > 2 && (
                       <div style={{position:"absolute",left:marquee.x,top:marquee.y,width:marquee.w,height:marquee.h,border:`1px solid ${T.accent}`,background:"rgba(249,115,22,0.08)",pointerEvents:"none",zIndex:100}}/>
+                    )}
+                    {/* Snap lines */}
+                    {snapLines.map((sl, i) => sl.type === "v"
+                      ? <div key={i} style={{position:"absolute",left:sl.val,top:sl.from,width:1,height:sl.to-sl.from,background:"#f97316",opacity:0.9,pointerEvents:"none",zIndex:60}}/>
+                      : <div key={i} style={{position:"absolute",left:sl.from,top:sl.val,width:sl.to-sl.from,height:1,background:"#f97316",opacity:0.9,pointerEvents:"none",zIndex:60}}/>
                     )}
                     {/* Guide lines on canvas */}
                     {guides.v.map((g, i) => (
@@ -1770,8 +2380,94 @@ export default function HMIEditor() {
               </div>
             );
           })()}
+          {/* Guide coordinate edit popup */}
+          {editingGuide && (() => {
+            const isV = editingGuide.axis === "v";
+            const maxVal = isV ? cW : cH;
+            return (
+              <div style={{position:"fixed",left:editingGuide.screenX,top:editingGuide.screenY,zIndex:1000,background:T.panel2,border:`1px solid ${T.blue}`,borderRadius:6,padding:"8px 10px",boxShadow:"0 4px 20px rgba(0,0,0,0.6)",display:"flex",flexDirection:"column",gap:6,minWidth:160}}
+                onClick={e=>e.stopPropagation()}>
+                <div style={{color:T.blue,fontSize:10,letterSpacing:1,fontFamily:"monospace"}}>
+                  {isV ? "НАПРАВЛЯЮЩАЯ X" : "НАПРАВЛЯЮЩАЯ Y"}
+                </div>
+                <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                  <input
+                    autoFocus
+                    type="number" min={0} max={maxVal}
+                    value={editingGuide.value}
+                    onChange={e => setEditingGuide(prev => ({...prev, value: parseInt(e.target.value)||0}))}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        const v = Math.max(0, Math.min(maxVal, editingGuide.value));
+                        setGuides(prev => {
+                          const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].map((g,i) => i===editingGuide.idx ? v : g)};
+                          guidesRef.current = next;
+                          return next;
+                        });
+                        setEditingGuide(null);
+                      }
+                      if (e.key === "Escape") setEditingGuide(null);
+                    }}
+                    style={{width:70,background:T.bg,border:`1px solid ${T.blue}`,color:T.text,padding:"4px 8px",fontSize:13,fontFamily:"monospace",borderRadius:3,outline:"none"}}
+                  />
+                  <span style={{color:T.textDim,fontSize:11}}>px</span>
+                </div>
+                <div style={{display:"flex",gap:5}}>
+                  <button onClick={()=>{
+                    const v = Math.max(0, Math.min(maxVal, editingGuide.value));
+                    setGuides(prev => {
+                      const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].map((g,i) => i===editingGuide.idx ? v : g)};
+                      guidesRef.current = next;
+                      return next;
+                    });
+                    setEditingGuide(null);
+                  }} style={{flex:1,padding:"4px",background:T.blue,border:"none",color:"#fff",fontSize:11,cursor:"pointer",borderRadius:3,fontFamily:"monospace"}}>OK</button>
+                  <button onClick={()=>{
+                    setGuides(prev => {
+                      const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].filter((_,i) => i!==editingGuide.idx)};
+                      guidesRef.current = next;
+                      return next;
+                    });
+                    setEditingGuide(null);
+                  }} style={{flex:1,padding:"4px",background:"transparent",border:`1px solid ${T.red}`,color:T.red,fontSize:11,cursor:"pointer",borderRadius:3,fontFamily:"monospace"}}>✕ удалить</button>
+                </div>
+                <div style={{color:T.textFaint,fontSize:9}}>Enter — применить · Esc — отмена</div>
+              </div>
+            );
+          })()}
+          {/* PiP Navigator */}
+          {showPiP && zoom > 1 && (() => {
+            const PIP_W = 160;
+            const PIP_H = Math.round(PIP_W * cH / cW);
+            const pipScale = PIP_W / cW;
+            // Viewport rect in canvas coords
+            const vpW = Math.min(cW, (canvasAreaRef.current?.clientWidth || 600) / scale);
+            const vpH = Math.min(cH, (canvasAreaRef.current?.clientHeight || 400) / scale);
+            const vpX = Math.max(0, -pan.x / scale);
+            const vpY = Math.max(0, -pan.y / scale);
+            return (
+              <div style={{position:"absolute",bottom:54,right:14,zIndex:25,background:"rgba(10,14,20,0.92)",border:`1px solid ${T.border}`,borderRadius:4,overflow:"hidden",width:PIP_W,height:PIP_H,boxShadow:"0 4px 20px rgba(0,0,0,0.7)"}}>
+                {/* Mini canvas render */}
+                <div style={{position:"absolute",inset:0,overflow:"hidden"}}>
+                  <div style={{position:"absolute",top:0,left:0,width:cW,height:cH,transform:`scale(${pipScale})`,transformOrigin:"top left",background:bgColor,backgroundImage:bgImage?`url(${bgImage})`:"none",backgroundSize:"cover"}}>
+                    {sharedElements.map(el=>renderEl(el,undefined,true))}
+                    {elements.map(el=>renderEl(el,undefined,false))}
+                  </div>
+                </div>
+                {/* Viewport indicator */}
+                <div style={{position:"absolute",
+                  left: vpX * pipScale, top: vpY * pipScale,
+                  width: Math.min(PIP_W, vpW * pipScale), height: Math.min(PIP_H, vpH * pipScale),
+                  border: `1px solid ${T.accent}`, background: "rgba(249,115,22,0.1)", pointerEvents:"none"
+                }}/>
+                <div style={{position:"absolute",bottom:2,left:0,right:0,textAlign:"center",color:T.textFaint,fontSize:8,fontFamily:"monospace"}}>НАВИГАТОР</div>
+              </div>
+            );
+          })()}
           {/* Zoom controls */}
           <div style={{position:"absolute",bottom:14,right:14,display:"flex",gap:4,alignItems:"center",zIndex:20}}>
+            <button onClick={()=>setShowPiP(v=>!v)} title="Навигатор (PiP)"
+              style={{width:28,height:28,background:showPiP?T.accentDim:T.panel,border:`1px solid ${showPiP?T.accent:T.border}`,color:showPiP?T.accent:T.textDim,fontSize:12,cursor:"pointer",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>⊞</button>
             <button onClick={()=>setZoom(z=>Math.min(4,z*1.2))} style={{width:28,height:28,background:T.panel,border:`1px solid ${T.border}`,color:T.text,fontSize:16,cursor:"pointer",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
             <div onClick={()=>{setZoom(1);setPan({x:0,y:0});}} style={{padding:"3px 8px",background:T.panel,border:`1px solid ${T.border}`,color:T.textDim,fontSize:11,cursor:"pointer",borderRadius:4,fontFamily:"monospace",minWidth:48,textAlign:"center"}}>{Math.round(zoom*100)}%</div>
             <button onClick={()=>setZoom(z=>Math.max(0.2,z/1.2))} style={{width:28,height:28,background:T.panel,border:`1px solid ${T.border}`,color:T.text,fontSize:16,cursor:"pointer",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
