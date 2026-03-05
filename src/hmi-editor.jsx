@@ -22,6 +22,14 @@ const RESOLUTIONS = [
 
 const GRID = 8;
 const snap = v => Math.round(v / GRID) * GRID;
+
+// Snap value to nearest guide if within threshold, else snap to grid
+function snapGuide(v, guideVals, threshold) {
+  for (const g of guideVals) {
+    if (Math.abs(v - g) <= threshold) return g;
+  }
+  return snap(v);
+}
 let _id = 1;
 const newId = () => `el_${_id++}`;
 
@@ -137,6 +145,122 @@ const DEFS = {
       </div>;
     },
   },
+  gauge: {
+    label:"Gauge", icon:"◑", w:140, h:140,
+    render(p, active) {
+      const value   = active ? (p.value ?? 75)    : (p.idleValue ?? 20);
+      const minVal  = p.minVal ?? 0;
+      const maxVal  = p.maxVal ?? 100;
+      const startDeg = 220;   // start angle (degrees, clockwise from top)
+      const sweepDeg = 280;   // total arc degrees
+      const pct   = Math.max(0, Math.min(1, (value - minVal) / (maxVal - minVal)));
+      const r     = 48;
+      const cx    = 70;
+      const cy    = 74;
+      const toRad = (deg) => (deg - 90) * Math.PI / 180;
+
+      const arcPath = (from, to, radius) => {
+        const s = toRad(from), e = toRad(to);
+        const large = (to - from) > 180 ? 1 : 0;
+        return `M ${cx + radius * Math.cos(s)} ${cy + radius * Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx + radius * Math.cos(e)} ${cy + radius * Math.sin(e)}`;
+      };
+
+      const trackColor  = p.trackColor  || "#1e2430";
+      const fillColor   = active ? (p.colorActive || T.accent) : (p.colorIdle || "#374151");
+      const needleColor = active ? (p.colorActive || T.accent) : "#555";
+      const fgColor     = active ? (p.colorActive || T.accent) : (p.textIdle || T.textDim);
+      const bgColor2    = p.bgColor || "transparent";
+
+      const endAngle = startDeg + sweepDeg * pct;
+      const needleAngle = startDeg + sweepDeg * pct;
+      const nRad = toRad(needleAngle);
+      const nx = cx + (r - 8) * Math.cos(nRad);
+      const ny = cy + (r - 8) * Math.sin(nRad);
+
+      // Tick marks
+      const ticks = [];
+      const tickCount = p.ticks ?? 5;
+      for (let i = 0; i <= tickCount; i++) {
+        const a = toRad(startDeg + sweepDeg * (i / tickCount));
+        const r1 = r + 6, r2 = r + 2;
+        ticks.push(<line key={i} x1={cx + r1*Math.cos(a)} y1={cy + r1*Math.sin(a)} x2={cx + r2*Math.cos(a)} y2={cy + r2*Math.sin(a)} stroke={fgColor} strokeWidth={1.5} opacity={0.6}/>);
+      }
+
+      return (
+        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:bgColor2,borderRadius:p.radius??6}}>
+          <svg width={cx*2} height={cy*2} style={{overflow:"visible"}}>
+            {/* Track arc */}
+            <path d={arcPath(startDeg, startDeg + sweepDeg, r)} fill="none" stroke={trackColor} strokeWidth={p.strokeWidth||8} strokeLinecap="round"/>
+            {/* Fill arc */}
+            {pct > 0 && <path d={arcPath(startDeg, endAngle, r)} fill="none" stroke={fillColor} strokeWidth={p.strokeWidth||8} strokeLinecap="round"
+              style={{filter: active ? `drop-shadow(0 0 4px ${fillColor}88)` : "none"}}/>}
+            {/* Ticks */}
+            {ticks}
+            {/* Needle */}
+            <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={needleColor} strokeWidth={2.5} strokeLinecap="round"
+              style={{filter: active ? `drop-shadow(0 0 3px ${needleColor})` : "none"}}/>
+            <circle cx={cx} cy={cy} r={5} fill={fillColor} stroke={trackColor} strokeWidth={2}/>
+            {/* Value */}
+            <text x={cx} y={cy + 22} textAnchor="middle" fill={fgColor} fontSize={p.fontSize||14} fontFamily="monospace" fontWeight={700} letterSpacing={1}>{active ? value : "--"}</text>
+            {/* Label */}
+            {p.unit && <text x={cx} y={cy + 36} textAnchor="middle" fill={fgColor} fontSize={9} fontFamily="monospace" opacity={0.7}>{p.unit}</text>}
+            {/* Min/Max labels */}
+            {p.showMinMax !== false && <>
+              <text x={cx + (r+14)*Math.cos(toRad(startDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily="monospace" opacity={0.5}>{minVal}</text>
+              <text x={cx + (r+14)*Math.cos(toRad(startDeg+sweepDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg+sweepDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily="monospace" opacity={0.5}>{maxVal}</text>
+            </>}
+          </svg>
+        </div>
+      );
+    },
+  },
+  data_table: {
+    label:"Table", icon:"≡", w:240, h:130,
+    render(p, active) {
+      const bd     = active ? (p.colorActive || T.accent) : (p.borderIdle || "#374151");
+      const headBg = active ? (p.headerBg || T.accentDim) : (p.headerBg || "#0d1117");
+      const headFg = active ? (p.colorActive || T.accent) : (p.headerFg || T.textDim);
+      const rowFg  = active ? (p.rowFg || T.text) : (p.rowFg || T.textDim);
+      const altBg  = p.altBg || "rgba(255,255,255,0.025)";
+      const bg2    = p.bgColor || "#0a0e14";
+      const fs     = p.fontSize || 11;
+
+      // Parse columns and rows from props
+      let cols = [];
+      try { cols = JSON.parse(p.columns || '["Name","Value","Unit"]'); } catch { cols = ["Name","Value","Unit"]; }
+      let rows = [];
+      try { rows = JSON.parse(p.rows || '[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]'); } catch { rows = [["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]; }
+
+      return (
+        <div style={{width:"100%",height:"100%",background:bg2,border:`1px solid ${bd}`,borderRadius:p.radius??4,overflow:"hidden",pointerEvents:"none",display:"flex",flexDirection:"column",
+          boxShadow: active ? `0 0 10px ${bd}33` : "none"}}>
+          {/* Header row */}
+          <div style={{display:"flex",background:headBg,borderBottom:`1px solid ${bd}`,flexShrink:0}}>
+            {cols.map((col, ci) => (
+              <div key={ci} style={{flex:1,padding:"3px 6px",color:headFg,fontSize:fs,fontFamily:"monospace",fontWeight:700,letterSpacing:0.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                borderLeft: ci > 0 ? `1px solid ${bd}44` : "none"}}>
+                {col}
+              </div>
+            ))}
+          </div>
+          {/* Data rows */}
+          <div style={{flex:1,overflow:"hidden"}}>
+            {rows.map((row, ri) => (
+              <div key={ri} style={{display:"flex",background:ri%2===1?altBg:"transparent",borderBottom:`1px solid ${bd}22`}}>
+                {cols.map((_, ci) => (
+                  <div key={ci} style={{flex:1,padding:"3px 6px",color:ci===0?headFg:rowFg,fontSize:fs,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                    borderLeft: ci > 0 ? `1px solid ${bd}22` : "none",
+                    fontWeight: ci===0 ? 600 : 400}}>
+                    {row[ci] ?? ""}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+  },
 };
 
 // ─── EXPORT HELPERS ───────────────────────────────────────────────────────────
@@ -155,6 +279,8 @@ function elToHTML(el, active) {
     case "label_text": { const fg=active?(p.colorActive||T.accent):(p.colorIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||"monospace"};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
     case "frame_box": { const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;border:${p.borderWidth||2}px solid ${bd};border-radius:${p.radius??6}px;position:relative;background:${p.bgColor||"rgba(255,255,255,0.015)"};box-sizing:border-box;">${p.title?`<div style="position:absolute;top:-8px;left:12px;background:#161b22;padding:0 6px;color:${active?(p.colorActive||T.accent):(p.colorIdle||T.textDim)};font-size:${p.fontSize||11}px;font-family:monospace;">${p.title}</div>`:""}</div>`; }
     case "separator": { const c=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;"><div style="width:100%;height:${p.thickness||2}px;background:${c};border-radius:1px;"></div></div>`; }
+    case "gauge": { const value=active?(p.value??75):(p.idleValue??20),minVal=p.minVal??0,maxVal=p.maxVal??100,pct=Math.max(0,Math.min(1,(value-minVal)/(maxVal-minVal))),r=48,cx=70,cy=74,startDeg=220,sweepDeg=280,toRad=d=>(d-90)*Math.PI/180,arcPath=(from,to,radius)=>{const s=toRad(from),e=toRad(to),large=(to-from)>180?1:0;return `M ${cx+radius*Math.cos(s)} ${cy+radius*Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx+radius*Math.cos(e)} ${cy+radius*Math.sin(e)}`;},endAngle=startDeg+sweepDeg*pct,nRad=toRad(endAngle),nx=cx+(r-8)*Math.cos(nRad),ny=cy+(r-8)*Math.sin(nRad),fc=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"),fg=active?(p.colorActive||T.accent):(p.textIdle||T.textDim),sw=p.strokeWidth||8; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><svg width="${cx*2}" height="${cy*2}" overflow="visible"><path d="${arcPath(startDeg,startDeg+sweepDeg,r)}" fill="none" stroke="${p.trackColor||'#1e2430'}" stroke-width="${sw}" stroke-linecap="round"/>${pct>0?`<path d="${arcPath(startDeg,endAngle,r)}" fill="none" stroke="${fc}" stroke-width="${sw}" stroke-linecap="round"/>`:""}<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="${fc}" stroke="${p.trackColor||'#1e2430'}" stroke-width="2"/><text x="${cx}" y="${cy+22}" text-anchor="middle" fill="${fg}" font-size="${p.fontSize||14}" font-family="monospace" font-weight="700">${active?value:"--"}</text>${p.unit?`<text x="${cx}" y="${cy+36}" text-anchor="middle" fill="${fg}" font-size="9" font-family="monospace" opacity="0.7">${p.unit}</text>`:""}</svg></div>`; }
+    case "data_table": { let cols=[]; try{cols=JSON.parse(p.columns||'["Name","Value","Unit"]');}catch{cols=["Name","Value","Unit"];} let rows=[]; try{rows=JSON.parse(p.rows||'[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]');}catch{rows=[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]];} const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),hBg=p.headerBg||(active?T.accentDim:"#0d1117"),hFg=active?(p.colorActive||T.accent):(p.headerFg||T.textDim),rFg=p.rowFg||(active?T.text:T.textDim),fs=p.fontSize||11; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||'#0a0e14'};border:1px solid ${bd};border-radius:${p.radius??4}px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;font-family:monospace;"><div style="display:flex;background:${hBg};border-bottom:1px solid ${bd};">${cols.map(c=>`<div style="flex:1;padding:3px 6px;color:${hFg};font-size:${fs}px;font-weight:700;overflow:hidden;white-space:nowrap;">${c}</div>`).join("")}</div><div style="flex:1;overflow:hidden;">${rows.map((row,ri)=>`<div style="display:flex;background:${ri%2===1?(p.altBg||"rgba(255,255,255,0.025)"):"transparent"};border-bottom:1px solid ${bd}22;">${cols.map((_,ci)=>`<div style="flex:1;padding:3px 6px;color:${ci===0?hFg:rFg};font-size:${fs}px;overflow:hidden;white-space:nowrap;font-weight:${ci===0?600:400};">${row[ci]??""}</div>`).join("")}</div>`).join("")}</div></div>`; }
     default: return `<div style="width:${W}px;height:${H}px;background:#333;border-radius:4px;"></div>`;
   }
 }
@@ -263,6 +389,13 @@ export default function HMIEditor() {
   const [selectedIsShared, setSelectedIsShared] = useState(false);
   const [multiSelected, setMultiSelected] = useState(new Set()); // all selected ids
   const [preview, setPreview] = useState("idle");  // idle|active|split
+
+  // ── Guides (ruler drag-lines) ──
+  const [guides, setGuides]   = useState({ h: [], v: [] }); // h = horizontal (y), v = vertical (x)
+  const guidesRef             = useRef({ h: [], v: [] });
+  const draggingGuideRef      = useRef(null); // { axis:"h"|"v", idx, startMouse, startVal }
+  useEffect(() => { guidesRef.current = guides; }, [guides]);
+  const GUIDE_SNAP = 8; // px in canvas coords — snap to guide within this distance
 
   // Zoom & pan
   const [zoom, setZoom] = useState(1);
@@ -541,6 +674,28 @@ export default function HMIEditor() {
       return;
     }
 
+    // ── Guide dragging ──
+    const dg = draggingGuideRef.current;
+    if (dg) {
+      const sc = scaleRef.current;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        let val;
+        if (dg.axis === "v") {
+          val = Math.round((e.clientX - rect.left) / sc);
+        } else {
+          val = Math.round((e.clientY - rect.top) / sc);
+        }
+        val = Math.max(0, dg.axis === "v" ? Math.min(val, cWRef.current) : Math.min(val, cHRef.current));
+        setGuides(prev => {
+          const next = { ...prev, [dg.axis]: prev[dg.axis].map((g, i) => i === dg.idx ? val : g) };
+          guidesRef.current = next;
+          return next;
+        });
+      }
+      return;
+    }
+
     const dr = draggingRef.current;
     const rs = resizingRef.current;
     const mq = marqueeRef.current;
@@ -550,13 +705,28 @@ export default function HMIEditor() {
       const dx = (e.clientX - dr.startMouseX) / sc;
       const dy = (e.clientY - dr.startMouseY) / sc;
       const allEls = [...elementsRef.current, ...sharedRef.current];
+      const gv = guidesRef.current.v;
+      const gh = guidesRef.current.h;
       dr.ids.forEach(eid => {
         const startPos = dr.startPositions[eid];
         if (!startPos) return;
         const el = allEls.find(x => x.id === eid);
         if (!el) return;
-        const nx = snap(Math.max(0, Math.min(startPos.x + dx, cWRef.current - el.w)));
-        const ny = snap(Math.max(0, Math.min(startPos.y + dy, cHRef.current - el.h)));
+        const rawX = Math.max(0, Math.min(startPos.x + dx, cWRef.current - el.w));
+        const rawY = Math.max(0, Math.min(startPos.y + dy, cHRef.current - el.h));
+        const thr = GUIDE_SNAP / sc;
+        // Snap left edge, then right edge, to vertical guides
+        let nx = snap(rawX);
+        for (const g of gv) {
+          if (Math.abs(rawX - g) <= thr)           { nx = g;        break; }
+          if (Math.abs(rawX + el.w - g) <= thr)    { nx = g - el.w; break; }
+        }
+        // Snap top edge, then bottom edge, to horizontal guides
+        let ny = snap(rawY);
+        for (const g of gh) {
+          if (Math.abs(rawY - g) <= thr)            { ny = g;        break; }
+          if (Math.abs(rawY + el.h - g) <= thr)     { ny = g - el.h; break; }
+        }
         const updater = x => ({...x, x: nx, y: ny});
         // check if shared
         if (sharedRef.current.find(x => x.id === eid)) {
@@ -593,6 +763,25 @@ export default function HMIEditor() {
 
   const wasDraggingRef = useRef(false);
   const onMouseUp = useCallback((e) => {
+    if (draggingGuideRef.current) {
+      // If dragged outside canvas, remove the guide
+      const dg = draggingGuideRef.current;
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const sc = scaleRef.current;
+        const outH = dg.axis === "h" && (e.clientY < rect.top || e.clientY > rect.top + rect.height * sc);
+        const outV = dg.axis === "v" && (e.clientX < rect.left || e.clientX > rect.left + rect.width * sc);
+        if (outH || outV) {
+          setGuides(prev => {
+            const next = { ...prev, [dg.axis]: prev[dg.axis].filter((_, i) => i !== dg.idx) };
+            guidesRef.current = next;
+            return next;
+          });
+        }
+      }
+      draggingGuideRef.current = null;
+      return;
+    }
     if (middlePanRef.current) { middlePanRef.current = null; return; }
 
     const wasDrag = !!(draggingRef.current || resizingRef.current);
@@ -647,6 +836,86 @@ export default function HMIEditor() {
   }, [pushHistory]);
 
 
+
+  // ── Alignment & distribution ──
+  // Note: takes elements/sharedElements directly so it always uses fresh state
+  const alignSelected = (mode, curElements, curShared) => {
+    const ids = multiSelectedRef.current;
+    if (ids.size < 2) return;
+    const allEls = [...curElements, ...curShared];
+    const sel = allEls.filter(e => ids.has(e.id));
+    if (sel.length < 2) return;
+
+    const minX  = Math.min(...sel.map(e => e.x));
+    const minY  = Math.min(...sel.map(e => e.y));
+    const maxX2 = Math.max(...sel.map(e => e.x + e.w));
+    const maxY2 = Math.max(...sel.map(e => e.y + e.h));
+    const cxAll = (minX + maxX2) / 2;
+    const cyAll = (minY + maxY2) / 2;
+
+    // Pre-compute dist maps: equal gaps between element edges
+    const distMap = {};
+    if (mode === "distH") {
+      const sorted = [...sel].sort((a,b) => a.x - b.x);
+      const first = sorted[0], last = sorted[sorted.length - 1];
+      const totalInnerW = sorted.slice(1, -1).reduce((s,e) => s+e.w, 0);
+      const freeSpace = (last.x) - (first.x + first.w);
+      const gap = sorted.length > 2 ? (freeSpace - totalInnerW) / (sorted.length - 1) : 0;
+      let cursor = first.x + first.w + gap;
+      distMap[first.id] = first.x;
+      distMap[last.id]  = last.x;
+      sorted.slice(1, -1).forEach(e => { distMap[e.id] = Math.round(cursor); cursor += e.w + gap; });
+    }
+    if (mode === "distV") {
+      const sorted = [...sel].sort((a,b) => a.y - b.y);
+      const first = sorted[0], last = sorted[sorted.length - 1];
+      const totalInnerH = sorted.slice(1, -1).reduce((s,e) => s+e.h, 0);
+      const freeSpace = (last.y) - (first.y + first.h);
+      const gap = sorted.length > 2 ? (freeSpace - totalInnerH) / (sorted.length - 1) : 0;
+      let cursor = first.y + first.h + gap;
+      distMap[first.id] = first.y;
+      distMap[last.id]  = last.y;
+      sorted.slice(1, -1).forEach(e => { distMap[e.id] = Math.round(cursor); cursor += e.h + gap; });
+    }
+
+    const getNew = (el) => {
+      switch (mode) {
+        case "left":   return { x: minX };
+        case "right":  return { x: maxX2 - el.w };
+        case "top":    return { y: minY };
+        case "bottom": return { y: maxY2 - el.h };
+        case "cx":     return { x: snap(cxAll - el.w / 2) };
+        case "cy":     return { y: snap(cyAll - el.h / 2) };
+        case "distH":  return { x: distMap[el.id] };
+        case "distV":  return { y: distMap[el.id] };
+        default:       return {};
+      }
+    };
+
+    const applyToList = (list) => list.map(e => ids.has(e.id) ? {...e, ...getNew(e)} : e);
+    const nextEls    = applyToList(curElements);
+    const nextShared = applyToList(curShared);
+    setElements(nextEls);
+    setSharedElements(nextShared);
+    pushHistory(nextEls, nextShared);
+  };
+
+  // ── Layer order ──
+  const reorderLayer = (mode) => {
+    const sel = selectedRef.current;
+    if (!sel || selectedIsSharedRef.current) return;
+    setElements(prev => {
+      const idx = prev.findIndex(e => e.id === sel);
+      if (idx < 0) return prev;
+      const next = [...prev];
+      if (mode === "up"   && idx < next.length - 1) { [next[idx], next[idx+1]] = [next[idx+1], next[idx]]; }
+      if (mode === "down" && idx > 0)                { [next[idx], next[idx-1]] = [next[idx-1], next[idx]]; }
+      if (mode === "top")  { const [el] = next.splice(idx,1); next.push(el); }
+      if (mode === "bottom") { const [el] = next.splice(idx,1); next.unshift(el); }
+      pushHistory(next, sharedRef.current);
+      return next;
+    });
+  };
 
   const handleBgImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -1031,6 +1300,31 @@ export default function HMIEditor() {
               <PropField label="Толщина (px)" value={p.thickness} onChange={v=>up("thickness",v)} type="number" min={1} max={16}/>
               <PropField label="Прозрачность" value={p.opacity} onChange={v=>up("opacity",Math.max(0,Math.min(1,v)))} type="number" min={0} max={1}/>
             </>}
+            {selectedEl.type==="gauge" && <>
+              <PropField label="Значение (active)" value={p.value} onChange={v=>up("value",v)} type="number" placeholder="75"/>
+              <PropField label="Значение (idle)" value={p.idleValue} onChange={v=>up("idleValue",v)} type="number" placeholder="20"/>
+              <PropField label="Минимум" value={p.minVal} onChange={v=>up("minVal",v)} type="number" placeholder="0"/>
+              <PropField label="Максимум" value={p.maxVal} onChange={v=>up("maxVal",v)} type="number" placeholder="100"/>
+              <PropField label="Единица (unit)" value={p.unit} onChange={v=>up("unit",v)} placeholder="°C"/>
+              <PropField label="Толщина дуги" value={p.strokeWidth} onChange={v=>up("strokeWidth",v)} type="number" min={2} max={20}/>
+              <PropField label="Делений шкалы" value={p.ticks} onChange={v=>up("ticks",v)} type="number" min={2} max={12}/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={36}/>
+              <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
+                <div style={{color:T.textDim,fontSize:9}}>Мин/Макс метки</div>
+                <div onClick={()=>up("showMinMax",p.showMinMax===false?true:false)} style={{width:28,height:16,background:p.showMinMax!==false?T.accent:"#1e2430",border:`1px solid ${p.showMinMax!==false?T.accent:"#374151"}`,borderRadius:8,cursor:"pointer",position:"relative"}}>
+                  <div style={{position:"absolute",top:2,left:p.showMinMax!==false?12:2,width:10,height:10,borderRadius:"50%",background:p.showMinMax!==false?"#fff":"#555"}}/>
+                </div>
+              </div>
+            </>}
+            {selectedEl.type==="data_table" && <>
+              <div style={{marginBottom:6,color:T.textDim,fontSize:10,lineHeight:1.6}}>
+                Колонки и строки — JSON-массивы
+              </div>
+              <PropField label='Колонки (JSON ["A","B"])' value={p.columns} onChange={v=>up("columns",v)} placeholder='["Name","Value","Unit"]'/>
+              <PropField label='Строки (JSON [[...],[...]])' value={p.rows} onChange={v=>up("rows",v)} placeholder='[["Temp","42.5","°C"]]'/>
+              <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={20}/>
+              <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={16}/>
+            </>}
 
             {/* Toggle shared */}
             <div style={{marginTop:12}}>
@@ -1090,10 +1384,48 @@ export default function HMIEditor() {
               <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
               <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
             </>}
+            {selectedEl.type==="gauge" && <>
+              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Трек (фон дуги)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal="#1e2430"/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Фон" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="transparent"/>
+            </>}
+            {selectedEl.type==="data_table" && <>
+              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Active рамка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Фон шапки" propKey="headerBg" value={p.headerBg} onChange={up} defaultVal="#0d1117"/>
+              <ColorRow label="Цвет шапки" propKey="headerFg" value={p.headerFg} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Цвет строк" propKey="rowFg" value={p.rowFg} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Чередование строк" propKey="altBg" value={p.altBg} onChange={up} defaultVal="rgba(255,255,255,0.025)"/>
+              <ColorRow label="Фон таблицы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="#0a0e14"/>
+            </>}
           </div>
         )}
 
-        <div style={{borderTop:`1px solid ${T.border}`,marginTop:12,paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
+        {/* Layer order buttons — only for non-shared elements */}
+        {!selectedIsShared && (
+          <div style={{borderTop:`1px solid ${T.border}`,marginTop:12,paddingTop:10}}>
+            <div style={{color:T.textDim,fontSize:10,letterSpacing:1,marginBottom:6}}>ПОРЯДОК СЛОЁВ</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:5,marginBottom:6}}>
+              {[
+                {mode:"top",    label:"▲▲ Вперёд", title:"На передний план"},
+                {mode:"bottom", label:"▼▼ Назад",  title:"На задний план"},
+                {mode:"up",     label:"▲ Выше",     title:"Поднять на слой"},
+                {mode:"down",   label:"▼ Ниже",     title:"Опустить на слой"},
+              ].map(({mode,label,title})=>(
+                <button key={mode} onClick={()=>reorderLayer(mode)} title={title}
+                  style={{padding:"5px 4px",background:"transparent",border:`1px solid ${T.border}`,color:T.textDim,fontSize:11,cursor:"pointer",borderRadius:3,fontFamily:"monospace"}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor=T.blue;e.currentTarget.style.color=T.blue;}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textDim;}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div style={{borderTop:`1px solid ${T.border}`,marginTop:6,paddingTop:10,display:"flex",flexDirection:"column",gap:6}}>
           <button onClick={duplicateSelected}
             style={{width:"100%",padding:"7px",background:"transparent",border:`1px solid ${T.yellow}`,color:T.yellow,fontSize:12,cursor:"pointer",borderRadius:3}}>
             ⎘ Дублировать (Ctrl+D)
@@ -1263,6 +1595,53 @@ export default function HMIEditor() {
           {history.length>1&&<span style={{color:T.yellow,fontSize:10,opacity:0.7}}>История: {historyIndex}/{history.length-1}</span>}
         </div>
 
+        {/* ── Alignment bar (visible only on multi-select) ── */}
+        {multiSelected.size > 1 && (() => {
+          const AB = ({mode, title, children}) => (
+            <button onClick={()=>alignSelected(mode, elements, sharedElements)} title={title}
+              style={{padding:"3px 7px",background:"transparent",border:`1px solid ${T.border}`,color:T.textDim,fontSize:12,cursor:"pointer",borderRadius:3,lineHeight:1,
+                      display:"flex",alignItems:"center",justifyContent:"center",minWidth:26,height:24}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor=T.yellow;e.currentTarget.style.color=T.yellow;}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textDim;}}>
+              {children}
+            </button>
+          );
+          return (
+            <div style={{height:32,background:"#0c111a",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",padding:"0 12px",gap:4,flexShrink:0}}>
+              <span style={{color:T.yellow,fontSize:10,letterSpacing:1,marginRight:4}}>▣ {multiSelected.size} выбрано</span>
+              <div style={{width:1,height:18,background:T.border,margin:"0 4px"}}/>
+              {/* Align group */}
+              <span style={{color:T.textFaint,fontSize:9,marginRight:2}}>ВЫРОВНЯТЬ</span>
+              <AB mode="left"   title="По левому краю">⬛︎<span style={{fontSize:8,marginLeft:1}}>L</span></AB>
+              <AB mode="cx"     title="По центру горизонтально">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="4" fill="currentColor" opacity=".5"/><rect x="4" y="8" width="6" height="4" fill="currentColor" opacity=".5"/><line x1="7" y1="0" x2="7" y2="14" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </AB>
+              <AB mode="right"  title="По правому краю">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="4" fill="currentColor" opacity=".5"/><rect x="6" y="8" width="6" height="4" fill="currentColor" opacity=".5"/><line x1="13" y1="0" x2="13" y2="14" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </AB>
+              <div style={{width:1,height:18,background:T.border,margin:"0 2px"}}/>
+              <AB mode="top"    title="По верхнему краю">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" fill="currentColor" opacity=".5"/><rect x="8" y="4" width="4" height="6" fill="currentColor" opacity=".5"/><line x1="0" y1="1" x2="14" y2="1" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </AB>
+              <AB mode="cy"     title="По центру вертикально">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" fill="currentColor" opacity=".5"/><rect x="8" y="4" width="4" height="6" fill="currentColor" opacity=".5"/><line x1="0" y1="7" x2="14" y2="7" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </AB>
+              <AB mode="bottom" title="По нижнему краю">
+                <svg width="14" height="14" viewBox="0 0 14 14"><rect x="2" y="2" width="4" height="10" fill="currentColor" opacity=".5"/><rect x="8" y="4" width="4" height="6" fill="currentColor" opacity=".5"/><line x1="0" y1="13" x2="14" y2="13" stroke="currentColor" strokeWidth="1.5"/></svg>
+              </AB>
+              <div style={{width:1,height:18,background:T.border,margin:"0 4px"}}/>
+              {/* Distribute group */}
+              <span style={{color:T.textFaint,fontSize:9,marginRight:2}}>РАСПРЕДЕЛИТЬ</span>
+              <AB mode="distH"  title="Равномерно по горизонтали">
+                <svg width="16" height="14" viewBox="0 0 16 14"><rect x="1" y="3" width="3" height="8" fill="currentColor" opacity=".5"/><rect x="6.5" y="3" width="3" height="8" fill="currentColor" opacity=".5"/><rect x="12" y="3" width="3" height="8" fill="currentColor" opacity=".5"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" strokeWidth="1" opacity=".3"/></svg>
+              </AB>
+              <AB mode="distV"  title="Равномерно по вертикали">
+                <svg width="14" height="16" viewBox="0 0 14 16"><rect x="3" y="1" width="8" height="3" fill="currentColor" opacity=".5"/><rect x="3" y="6.5" width="8" height="3" fill="currentColor" opacity=".5"/><rect x="3" y="12" width="8" height="3" fill="currentColor" opacity=".5"/><line x1="7" y1="1" x2="7" y2="15" stroke="currentColor" strokeWidth="1" opacity=".3"/></svg>
+              </AB>
+            </div>
+          );
+        })()}
+
         {/* Canvas */}
         <div ref={canvasAreaRef} style={{flex:1,overflow:"hidden",padding:20,display:"flex",gap:20,justifyContent:"center",alignItems:"flex-start",position:"relative",cursor:middlePanRef.current?"grabbing":"default"}}
           onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
@@ -1282,25 +1661,115 @@ export default function HMIEditor() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div style={{position:"relative",flexShrink:0,transform:`translate(${pan.x}px,${pan.y}px)`}}>
-              <div style={{width:dW,height:dH,position:"relative",flexShrink:0}}>
-                <div
-                  ref={canvasRef}
-                  onDrop={onCanvasDrop} onDragOver={e=>e.preventDefault()}
-                  onMouseDown={onCanvasMouseDown}
-                  onClick={e=>{ if(wasDraggingRef.current){wasDraggingRef.current=false;return;} }}
-                  style={{width:cW,height:cH,background:bgColor,position:"absolute",top:0,left:0,backgroundImage:bgImage?`url(${bgImage})`:`radial-gradient(circle,#1e2430 1px,transparent 1px)`,backgroundSize:bgImage?"cover":`${GRID*4}px ${GRID*4}px`,backgroundPosition:"center",border:`1px solid ${T.border}`,transform:`scale(${scale})`,transformOrigin:"top left",cursor:"default",userSelect:"none"}}>
-                  {sharedElements.map(el=>renderEl(el,undefined,true))}
-                  {elements.map(el=>renderEl(el,undefined,false))}
-                  {/* Marquee selection rect */}
-                  {marquee && marquee.w > 2 && (
-                    <div style={{position:"absolute",left:marquee.x,top:marquee.y,width:marquee.w,height:marquee.h,border:`1px solid ${T.accent}`,background:"rgba(249,115,22,0.08)",pointerEvents:"none",zIndex:100}}/>
-                  )}
+          ) : (() => {
+            const RULER = 20; // ruler thickness px (screen)
+            // Tick interval in canvas px, chosen to avoid crowding at current scale
+            const rawInterval = 50 / scale;
+            const niceIntervals = [10,20,25,50,100,200,250,500,1000];
+            const tickInterval = niceIntervals.find(n => n >= rawInterval) || 1000;
+
+            // Build ruler ticks
+            const hTicks = [], vTicks = [];
+            for (let x = 0; x <= cW; x += tickInterval) {
+              const sx = x * scale;
+              const major = x % (tickInterval * 5) === 0;
+              hTicks.push(<g key={x}>
+                <line x1={sx} y1={major ? RULER*0.3 : RULER*0.6} x2={sx} y2={RULER} stroke={major?"#555":"#333"} strokeWidth={1}/>
+                {major && <text x={sx+2} y={RULER-3} fill="#555" fontSize={9} fontFamily="monospace">{x}</text>}
+              </g>);
+            }
+            for (let y = 0; y <= cH; y += tickInterval) {
+              const sy = y * scale;
+              const major = y % (tickInterval * 5) === 0;
+              vTicks.push(<g key={y}>
+                <line x1={major ? RULER*0.3 : RULER*0.6} y1={sy} x2={RULER} y2={sy} stroke={major?"#555":"#333"} strokeWidth={1}/>
+                {major && <text x={2} y={sy+10} fill="#555" fontSize={9} fontFamily="monospace" transform={`rotate(-90,${RULER/2-2},${sy+10})`}>{y}</text>}
+              </g>);
+            }
+
+            // Add guide from ruler click
+            const onRulerDown = (axis) => (e) => {
+              e.stopPropagation();
+              const rect = canvasRef.current?.getBoundingClientRect();
+              if (!rect) return;
+              const sc = scaleRef.current;
+              const val = axis === "v"
+                ? Math.round((e.clientX - rect.left) / sc)
+                : Math.round((e.clientY - rect.top) / sc);
+              setGuides(prev => {
+                const next = { ...prev, [axis]: [...prev[axis], Math.max(0, val)] };
+                guidesRef.current = next;
+                const newIdx = next[axis].length - 1;
+                draggingGuideRef.current = { axis, idx: newIdx };
+                return next;
+              });
+            };
+
+            const onGuideDown = (axis, idx) => (e) => {
+              e.stopPropagation();
+              draggingGuideRef.current = { axis, idx };
+            };
+
+            return (
+              <div style={{position:"relative",flexShrink:0,transform:`translate(${pan.x}px,${pan.y}px)`}}>
+                {/* Corner square */}
+                <div style={{position:"absolute",left:0,top:0,width:RULER,height:RULER,background:"#0a0e14",border:`1px solid ${T.border}`,zIndex:30,boxSizing:"border-box",
+                  display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}
+                  onClick={()=>setGuides({h:[],v:[]})} title="Сбросить все направляющие">
+                  <svg width={10} height={10} viewBox="0 0 10 10"><line x1={0} y1={0} x2={10} y2={10} stroke="#555" strokeWidth={1}/><line x1={10} y1={0} x2={0} y2={10} stroke="#555" strokeWidth={1}/></svg>
+                </div>
+                {/* Horizontal ruler (top) */}
+                <svg width={dW} height={RULER} style={{position:"absolute",left:RULER,top:0,zIndex:20,cursor:"crosshair",userSelect:"none"}}
+                  onMouseDown={onRulerDown("v")}>
+                  <rect width={dW} height={RULER} fill="#0a0e14"/>
+                  <line x1={0} y1={RULER-1} x2={dW} y2={RULER-1} stroke={T.border} strokeWidth={1}/>
+                  {hTicks}
+                  {/* Vertical guide markers on top ruler */}
+                  {guides.v.map((g, i) => (
+                    <line key={i} x1={g*scale} y1={0} x2={g*scale} y2={RULER} stroke="#58a6ff" strokeWidth={2} opacity={0.8}
+                      style={{cursor:"ew-resize"}} onMouseDown={e=>{e.stopPropagation();onGuideDown("v",i)(e);}}/>
+                  ))}
+                </svg>
+                {/* Vertical ruler (left) */}
+                <svg width={RULER} height={dH} style={{position:"absolute",left:0,top:RULER,zIndex:20,cursor:"crosshair",userSelect:"none"}}
+                  onMouseDown={onRulerDown("h")}>
+                  <rect width={RULER} height={dH} fill="#0a0e14"/>
+                  <line x1={RULER-1} y1={0} x2={RULER-1} y2={dH} stroke={T.border} strokeWidth={1}/>
+                  {vTicks}
+                  {/* Horizontal guide markers on left ruler */}
+                  {guides.h.map((g, i) => (
+                    <line key={i} x1={0} y1={g*scale} x2={RULER} y2={g*scale} stroke="#58a6ff" strokeWidth={2} opacity={0.8}
+                      style={{cursor:"ns-resize"}} onMouseDown={e=>{e.stopPropagation();onGuideDown("h",i)(e);}}/>
+                  ))}
+                </svg>
+                {/* Canvas offset by ruler size */}
+                <div style={{width:dW,height:dH,position:"relative",flexShrink:0,marginLeft:RULER,marginTop:RULER}}>
+                  <div
+                    ref={canvasRef}
+                    onDrop={onCanvasDrop} onDragOver={e=>e.preventDefault()}
+                    onMouseDown={onCanvasMouseDown}
+                    onClick={e=>{ if(wasDraggingRef.current){wasDraggingRef.current=false;return;} }}
+                    style={{width:cW,height:cH,background:bgColor,position:"absolute",top:0,left:0,backgroundImage:bgImage?`url(${bgImage})`:`radial-gradient(circle,#1e2430 1px,transparent 1px)`,backgroundSize:bgImage?"cover":`${GRID*4}px ${GRID*4}px`,backgroundPosition:"center",border:`1px solid ${T.border}`,transform:`scale(${scale})`,transformOrigin:"top left",cursor:"default",userSelect:"none"}}>
+                    {sharedElements.map(el=>renderEl(el,undefined,true))}
+                    {elements.map(el=>renderEl(el,undefined,false))}
+                    {/* Marquee selection rect */}
+                    {marquee && marquee.w > 2 && (
+                      <div style={{position:"absolute",left:marquee.x,top:marquee.y,width:marquee.w,height:marquee.h,border:`1px solid ${T.accent}`,background:"rgba(249,115,22,0.08)",pointerEvents:"none",zIndex:100}}/>
+                    )}
+                    {/* Guide lines on canvas */}
+                    {guides.v.map((g, i) => (
+                      <div key={"gv"+i} onMouseDown={e=>{e.stopPropagation();onGuideDown("v",i)(e);}}
+                        style={{position:"absolute",left:g,top:0,width:1,height:cH,background:"#58a6ff",opacity:0.5,cursor:"ew-resize",zIndex:50,pointerEvents:"all"}}/>
+                    ))}
+                    {guides.h.map((g, i) => (
+                      <div key={"gh"+i} onMouseDown={e=>{e.stopPropagation();onGuideDown("h",i)(e);}}
+                        style={{position:"absolute",left:0,top:g,width:cW,height:1,background:"#58a6ff",opacity:0.5,cursor:"ns-resize",zIndex:50,pointerEvents:"all"}}/>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           {/* Zoom controls */}
           <div style={{position:"absolute",bottom:14,right:14,display:"flex",gap:4,alignItems:"center",zIndex:20}}>
             <button onClick={()=>setZoom(z=>Math.min(4,z*1.2))} style={{width:28,height:28,background:T.panel,border:`1px solid ${T.border}`,color:T.text,fontSize:16,cursor:"pointer",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
@@ -1375,6 +1844,67 @@ export default function HMIEditor() {
         <div style={{flex:1,overflowY:"auto"}}>
           <PropsPanel/>
         </div>
+
+        {/* ── Layer list ── */}
+        {(elements.length > 0 || sharedElements.length > 0) && (
+          <div style={{borderTop:`1px solid ${T.border}`,flexShrink:0,maxHeight:200,display:"flex",flexDirection:"column"}}>
+            <div style={{padding:"7px 12px 5px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+              <span style={{color:T.textDim,fontSize:10,letterSpacing:1}}>СЛОИ</span>
+              <span style={{color:T.textFaint,fontSize:9}}>{elements.length} эл.</span>
+            </div>
+            <div style={{overflowY:"auto",flex:1}}>
+              {/* Page elements — reversed so top layer is first */}
+              {[...elements].reverse().map((el, i) => {
+                const isSel = el.id === selected && !selectedIsShared;
+                const def = DEFS[el.type];
+                const realIdx = elements.length - 1 - i;
+                return (
+                  <div key={el.id}
+                    onClick={()=>{setSelected(el.id);setSelectedIsShared(false);selectedRef.current=el.id;selectedIsSharedRef.current=false;const s=new Set([el.id]);setMultiSelected(s);multiSelectedRef.current=s;}}
+                    style={{display:"flex",alignItems:"center",gap:6,padding:"3px 10px",background:isSel?T.accentBg:"transparent",borderLeft:`2px solid ${isSel?T.accent:"transparent"}`,cursor:"pointer",userSelect:"none"}}
+                    onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background="rgba(255,255,255,0.04)";}}
+                    onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
+                    <span style={{color:T.textFaint,fontSize:9,fontFamily:"monospace",width:16,flexShrink:0,textAlign:"right"}}>{realIdx}</span>
+                    <span style={{color:isSel?T.accent:T.textDim,fontSize:11,flexShrink:0}}>{def?.icon||"?"}</span>
+                    <span style={{color:isSel?T.accent:T.text,fontSize:11,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {el.props?.label||el.props?.text||el.props?.title||def?.label||el.type}
+                    </span>
+                    {isSel && (
+                      <div style={{display:"flex",gap:2,flexShrink:0}}>
+                        <span onClick={e=>{e.stopPropagation();reorderLayer("up");}}   title="Выше"  style={{color:T.blue,cursor:"pointer",fontSize:12,padding:"0 2px"}}>▲</span>
+                        <span onClick={e=>{e.stopPropagation();reorderLayer("down");}} title="Ниже"  style={{color:T.blue,cursor:"pointer",fontSize:12,padding:"0 2px"}}>▼</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+              {/* Shared elements */}
+              {sharedElements.length > 0 && (
+                <>
+                  <div style={{padding:"4px 10px 2px",color:T.blue,fontSize:9,letterSpacing:1,borderTop:`1px solid ${T.border}22`,marginTop:2}}>ОБЩИЕ</div>
+                  {[...sharedElements].reverse().map(el => {
+                    const isSel = el.id === selected && selectedIsShared;
+                    const def = DEFS[el.type];
+                    return (
+                      <div key={el.id}
+                        onClick={()=>{setSelected(el.id);setSelectedIsShared(true);selectedRef.current=el.id;selectedIsSharedRef.current=true;const s=new Set([el.id]);setMultiSelected(s);multiSelectedRef.current=s;}}
+                        style={{display:"flex",alignItems:"center",gap:6,padding:"3px 10px",background:isSel?T.accentBg:"transparent",borderLeft:`2px solid ${isSel?T.blue:"transparent"}`,cursor:"pointer",userSelect:"none"}}
+                        onMouseEnter={e=>{if(!isSel)e.currentTarget.style.background="rgba(255,255,255,0.04)";}}
+                        onMouseLeave={e=>{if(!isSel)e.currentTarget.style.background="transparent";}}>
+                        <span style={{color:T.blue,fontSize:9,flexShrink:0}}>🔗</span>
+                        <span style={{color:isSel?T.accent:T.textDim,fontSize:11,flexShrink:0}}>{def?.icon||"?"}</span>
+                        <span style={{color:isSel?T.accent:T.text,fontSize:11,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {el.props?.label||el.props?.text||el.props?.title||def?.label||el.type}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {elements.length>0&&(
           <div style={{padding:10,borderTop:`1px solid ${T.border}`}}>
             <div style={{color:T.textDim,fontSize:11,marginBottom:6}}>PREVIEW</div>
