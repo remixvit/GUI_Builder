@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "api/auth.js": {
-      "runtime": "edge"
-    }
-  },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/auth" }
   ]
