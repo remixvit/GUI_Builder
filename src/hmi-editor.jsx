@@ -1,5 +1,84 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 
+// ─── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+
+  const submit = async () => {
+    if (!username || !password) { setError("Введите логин и пароль"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      await onLogin(username, password);
+    } catch (e) {
+      setError(e.message || "Ошибка входа");
+    }
+    setLoading(false);
+  };
+
+  const onKey = (e) => { if (e.key === "Enter") submit(); };
+
+  return (
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",width:"100vw",
+      background:"#0f1117",fontFamily:"'Courier New',monospace"}}>
+      <div style={{width:340,padding:36,background:"#161b22",border:"1px solid #21262d",borderRadius:10,
+        boxShadow:"0 0 60px rgba(249,115,22,0.08)"}}>
+
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:28}}>
+          <div style={{fontSize:28,marginBottom:6}}>⬡</div>
+          <div style={{color:"#f97316",fontSize:14,fontWeight:700,letterSpacing:3}}>HMI EDITOR</div>
+          <div style={{color:"#444d56",fontSize:11,marginTop:4,letterSpacing:1}}>АВТОРИЗАЦИЯ</div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div style={{background:"rgba(248,81,73,0.1)",border:"1px solid #f8514944",color:"#f85149",
+            fontSize:12,padding:"8px 12px",borderRadius:4,marginBottom:16,textAlign:"center"}}>
+            {error}
+          </div>
+        )}
+
+        {/* Fields */}
+        <div style={{marginBottom:14}}>
+          <div style={{color:"#8b949e",fontSize:11,marginBottom:5,letterSpacing:1}}>ЛОГИН</div>
+          <input
+            value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={onKey}
+            autoFocus placeholder="username"
+            style={{width:"100%",boxSizing:"border-box",background:"#0f1117",border:"1px solid #21262d",
+              color:"#e6edf3",padding:"9px 12px",fontSize:13,borderRadius:4,fontFamily:"'Courier New',monospace",
+              outline:"none"}}
+            onFocus={e=>e.target.style.borderColor="#f97316"}
+            onBlur={e=>e.target.style.borderColor="#21262d"}
+          />
+        </div>
+        <div style={{marginBottom:24}}>
+          <div style={{color:"#8b949e",fontSize:11,marginBottom:5,letterSpacing:1}}>ПАРОЛЬ</div>
+          <input
+            type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={onKey}
+            placeholder="••••••••"
+            style={{width:"100%",boxSizing:"border-box",background:"#0f1117",border:"1px solid #21262d",
+              color:"#e6edf3",padding:"9px 12px",fontSize:13,borderRadius:4,fontFamily:"'Courier New',monospace",
+              outline:"none"}}
+            onFocus={e=>e.target.style.borderColor="#f97316"}
+            onBlur={e=>e.target.style.borderColor="#21262d"}
+          />
+        </div>
+
+        <button onClick={submit} disabled={loading}
+          style={{width:"100%",padding:"10px",background:loading?"#7c3a12":"#f97316",border:"none",
+            color:"#fff",fontSize:13,fontWeight:700,cursor:loading?"default":"pointer",borderRadius:4,
+            fontFamily:"'Courier New',monospace",letterSpacing:2,transition:"background 0.15s"}}>
+          {loading ? "ВХОД..." : "ВОЙТИ"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const T = {
   bg: "#0f1117", panel: "#161b22", panel2: "#1c2333", border: "#21262d",
@@ -860,27 +939,58 @@ export default function HMIEditor() {
   const [activeTab, setActiveTab] = useState("props"); // props|colors
   const [showPiP, setShowPiP] = useState(false); // Picture-in-Picture navigator
 
-  // ── Admin panel ──
+  // ── Auth & Admin panel ────────────────────────────────────────────────────
+  const [currentUser, setCurrentUser] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("hmi_user")) || null; } catch { return null; }
+  });
+  const [authCredentials, setAuthCredentials] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem("hmi_creds")) || null; } catch { return null; }
+  });
+
   const [showAdmin, setShowAdmin] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // { username, role }
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminLoading, setAdminLoading] = useState(false);
-  const [adminMsg, setAdminMsg] = useState(null); // { type: "ok"|"err", text }
+  const [adminMsg, setAdminMsg] = useState(null);
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("user");
-  const [editingUser, setEditingUser] = useState(null); // { username, password, role }
+  const [editingUser, setEditingUser] = useState(null);
 
-  // Fetch current user info on mount
-  useEffect(() => {
-    fetch("/api/me").then(r => r.ok ? r.json() : null).then(u => { if(u) setCurrentUser(u); }).catch(()=>{});
-  }, []);
+  // Build Basic Auth header from stored credentials
+  const authHeader = (creds) => {
+    if (!creds) return {};
+    return { "Authorization": "Basic " + btoa(`${creds.username}:${creds.password}`) };
+  };
+
+  const handleLogin = async (username, password) => {
+    const r = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Ошибка входа");
+    const user = { username: data.username, role: data.role };
+    const creds = { username, password };
+    setCurrentUser(user);
+    setAuthCredentials(creds);
+    sessionStorage.setItem("hmi_user", JSON.stringify(user));
+    sessionStorage.setItem("hmi_creds", JSON.stringify(creds));
+    return user;
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setAuthCredentials(null);
+    sessionStorage.removeItem("hmi_user");
+    sessionStorage.removeItem("hmi_creds");
+  };
 
   // Load users list (admin only)
   const loadAdminUsers = async () => {
     setAdminLoading(true);
     try {
-      const r = await fetch("/api/admin/users");
+      const r = await fetch("/api/admin/users", { headers: authHeader(authCredentials) });
       if (r.ok) setAdminUsers(await r.json());
       else setAdminMsg({ type:"err", text:"Нет доступа" });
     } catch { setAdminMsg({ type:"err", text:"Ошибка загрузки" }); }
@@ -891,7 +1001,11 @@ export default function HMIEditor() {
     if (!newUsername || !newPassword) { setAdminMsg({ type:"err", text:"Заполните логин и пароль" }); return; }
     setAdminLoading(true);
     try {
-      const r = await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole }) });
+      const r = await fetch("/api/admin/users", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", ...authHeader(authCredentials) },
+        body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole }),
+      });
       const data = await r.json();
       if (r.ok) { setAdminMsg({ type:"ok", text:"Пользователь добавлен" }); setNewUsername(""); setNewPassword(""); loadAdminUsers(); }
       else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
@@ -903,7 +1017,7 @@ export default function HMIEditor() {
     if (!window.confirm(`Удалить пользователя "${username}"?`)) return;
     setAdminLoading(true);
     try {
-      const r = await fetch(`/api/admin/users/${username}`, { method:"DELETE" });
+      const r = await fetch(`/api/admin/users/${username}`, { method:"DELETE", headers: authHeader(authCredentials) });
       const data = await r.json();
       if (r.ok) { setAdminMsg({ type:"ok", text:"Удалён" }); loadAdminUsers(); }
       else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
@@ -918,7 +1032,11 @@ export default function HMIEditor() {
       const body = {};
       if (editingUser.password) body.password = editingUser.password;
       if (editingUser.role) body.role = editingUser.role;
-      const r = await fetch(`/api/admin/users/${editingUser.username}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+      const r = await fetch(`/api/admin/users/${editingUser.username}`, {
+        method:"PATCH",
+        headers:{ "Content-Type":"application/json", ...authHeader(authCredentials) },
+        body: JSON.stringify(body),
+      });
       const data = await r.json();
       if (r.ok) { setAdminMsg({ type:"ok", text:"Сохранено" }); setEditingUser(null); loadAdminUsers(); }
       else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
@@ -2084,6 +2202,11 @@ export default function HMIEditor() {
     );
   };
 
+  // ── Login screen ──────────────────────────────────────────────────────────
+  if (!currentUser) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div style={{display:"flex",height:"100vh",width:"100vw",background:T.bg,color:T.text,fontFamily:"'Courier New',monospace",userSelect:"none",overflow:"hidden"}}>
 
@@ -2218,6 +2341,12 @@ export default function HMIEditor() {
               👤 ADMIN
             </button>
           )}
+          <button onClick={handleLogout} title={`Выйти (${currentUser?.username})`}
+            style={{padding:"6px 11px",background:"transparent",border:`1px solid ${T.border}`,color:T.textDim,fontSize:12,cursor:"pointer",borderRadius:4,marginLeft:2}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=T.red;e.currentTarget.style.color=T.red;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.textDim;}}>
+            ⏻
+          </button>
         </div>
 
         {/* Page name bar */}
