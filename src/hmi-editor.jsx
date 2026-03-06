@@ -860,6 +860,72 @@ export default function HMIEditor() {
   const [activeTab, setActiveTab] = useState("props"); // props|colors
   const [showPiP, setShowPiP] = useState(false); // Picture-in-Picture navigator
 
+  // ── Admin panel ──
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null); // { username, role }
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminMsg, setAdminMsg] = useState(null); // { type: "ok"|"err", text }
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("user");
+  const [editingUser, setEditingUser] = useState(null); // { username, password, role }
+
+  // Fetch current user info on mount
+  useEffect(() => {
+    fetch("/api/me").then(r => r.ok ? r.json() : null).then(u => { if(u) setCurrentUser(u); }).catch(()=>{});
+  }, []);
+
+  // Load users list (admin only)
+  const loadAdminUsers = async () => {
+    setAdminLoading(true);
+    try {
+      const r = await fetch("/api/admin/users");
+      if (r.ok) setAdminUsers(await r.json());
+      else setAdminMsg({ type:"err", text:"Нет доступа" });
+    } catch { setAdminMsg({ type:"err", text:"Ошибка загрузки" }); }
+    setAdminLoading(false);
+  };
+
+  const adminAddUser = async () => {
+    if (!newUsername || !newPassword) { setAdminMsg({ type:"err", text:"Заполните логин и пароль" }); return; }
+    setAdminLoading(true);
+    try {
+      const r = await fetch("/api/admin/users", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ username: newUsername, password: newPassword, role: newRole }) });
+      const data = await r.json();
+      if (r.ok) { setAdminMsg({ type:"ok", text:"Пользователь добавлен" }); setNewUsername(""); setNewPassword(""); loadAdminUsers(); }
+      else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
+    } catch { setAdminMsg({ type:"err", text:"Ошибка сети" }); }
+    setAdminLoading(false);
+  };
+
+  const adminDeleteUser = async (username) => {
+    if (!window.confirm(`Удалить пользователя "${username}"?`)) return;
+    setAdminLoading(true);
+    try {
+      const r = await fetch(`/api/admin/users/${username}`, { method:"DELETE" });
+      const data = await r.json();
+      if (r.ok) { setAdminMsg({ type:"ok", text:"Удалён" }); loadAdminUsers(); }
+      else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
+    } catch { setAdminMsg({ type:"err", text:"Ошибка сети" }); }
+    setAdminLoading(false);
+  };
+
+  const adminSaveEdit = async () => {
+    if (!editingUser) return;
+    setAdminLoading(true);
+    try {
+      const body = {};
+      if (editingUser.password) body.password = editingUser.password;
+      if (editingUser.role) body.role = editingUser.role;
+      const r = await fetch(`/api/admin/users/${editingUser.username}`, { method:"PATCH", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+      const data = await r.json();
+      if (r.ok) { setAdminMsg({ type:"ok", text:"Сохранено" }); setEditingUser(null); loadAdminUsers(); }
+      else setAdminMsg({ type:"err", text: data.error || "Ошибка" });
+    } catch { setAdminMsg({ type:"err", text:"Ошибка сети" }); }
+    setAdminLoading(false);
+  };
+
   // Snap lines: edges of other elements shown while dragging
   const [snapLines, setSnapLines] = useState([]); // [{type:"v"|"h", val, from, to}]
   const snapLinesRef = useRef([]);
@@ -2146,6 +2212,12 @@ export default function HMIEditor() {
             style={{padding:"6px 12px",background:"transparent",border:`1px solid ${T.accent}`,color:T.accent,fontSize:12,cursor:"pointer",borderRadius:4}}>
             ⬇ ALL
           </button>
+          {currentUser?.role === "admin" && (
+            <button onClick={()=>{ setShowAdmin(true); loadAdminUsers(); setAdminMsg(null); }}
+              style={{padding:"6px 13px",background:"rgba(88,166,255,0.08)",border:`1px solid ${T.blue}`,color:T.blue,fontSize:12,fontWeight:700,cursor:"pointer",borderRadius:4,marginLeft:4}}>
+              👤 ADMIN
+            </button>
+          )}
         </div>
 
         {/* Page name bar */}
@@ -2646,6 +2718,96 @@ export default function HMIEditor() {
                 style={{flex:2,padding:"9px",background:T.accent,border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:4}}>
                 Применить {tempRes.w?`${tempRes.w}×${tempRes.h}`:`${customW}×${customH}`}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ ADMIN PANEL ══ */}
+      {showAdmin&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}}
+          onClick={()=>setShowAdmin(false)}>
+          <div style={{background:T.panel,border:`1px solid ${T.blue}55`,borderRadius:10,padding:24,minWidth:480,maxWidth:560,maxHeight:"80vh",overflow:"auto",boxShadow:`0 0 40px ${T.blue}22`}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18}}>
+              <div style={{color:T.blue,fontSize:14,fontWeight:700,letterSpacing:2}}>👤 УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ</div>
+              <button onClick={()=>setShowAdmin(false)} style={{background:"transparent",border:"none",color:T.textDim,fontSize:18,cursor:"pointer"}}>✕</button>
+            </div>
+
+            {adminMsg && (
+              <div style={{padding:"8px 12px",borderRadius:4,marginBottom:14,fontSize:12,
+                background: adminMsg.type==="ok" ? "rgba(63,185,80,0.12)" : "rgba(248,81,73,0.12)",
+                border: `1px solid ${adminMsg.type==="ok" ? T.green : T.red}`,
+                color: adminMsg.type==="ok" ? T.green : T.red}}>
+                {adminMsg.text}
+              </div>
+            )}
+
+            {/* User list */}
+            <div style={{marginBottom:18}}>
+              <div style={{color:T.textDim,fontSize:11,letterSpacing:1,marginBottom:8}}>СПИСОК ПОЛЬЗОВАТЕЛЕЙ</div>
+              {adminLoading && <div style={{color:T.textFaint,fontSize:12}}>Загрузка...</div>}
+              {adminUsers.map(u=>(
+                <div key={u.username} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 12px",background:"#0a0e14",border:`1px solid ${T.border}`,borderRadius:4,marginBottom:6}}>
+                  {editingUser?.username === u.username ? (
+                    <>
+                      <span style={{color:T.text,fontSize:13,fontFamily:"monospace",flex:1,fontWeight:700}}>{u.username}</span>
+                      <input value={editingUser.password} onChange={e=>setEditingUser(ev=>({...ev,password:e.target.value}))}
+                        placeholder="Новый пароль"
+                        style={{background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"4px 8px",fontSize:12,borderRadius:3,width:130}}/>
+                      <select value={editingUser.role} onChange={e=>setEditingUser(ev=>({...ev,role:e.target.value}))}
+                        style={{background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"4px 6px",fontSize:12,borderRadius:3}}>
+                        <option value="user">user</option>
+                        <option value="admin">admin</option>
+                      </select>
+                      <button onClick={adminSaveEdit}
+                        style={{padding:"4px 10px",background:T.greenDim,border:`1px solid ${T.green}`,color:T.green,fontSize:11,cursor:"pointer",borderRadius:3}}>✓</button>
+                      <button onClick={()=>setEditingUser(null)}
+                        style={{padding:"4px 8px",background:"transparent",border:`1px solid ${T.border}`,color:T.textDim,fontSize:11,cursor:"pointer",borderRadius:3}}>✕</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{color:T.text,fontSize:13,fontFamily:"monospace",flex:1,fontWeight:700}}>{u.username}</span>
+                      <span style={{fontSize:11,padding:"2px 8px",borderRadius:10,
+                        background: u.role==="admin" ? "rgba(88,166,255,0.15)" : "rgba(139,148,158,0.1)",
+                        color: u.role==="admin" ? T.blue : T.textDim,
+                        border: `1px solid ${u.role==="admin" ? T.blue+"55" : T.border}`}}>
+                        {u.role}
+                      </span>
+                      <button onClick={()=>setEditingUser({username:u.username,password:"",role:u.role})}
+                        style={{padding:"4px 10px",background:"transparent",border:`1px solid ${T.yellow}`,color:T.yellow,fontSize:11,cursor:"pointer",borderRadius:3}}>✎</button>
+                      <button onClick={()=>adminDeleteUser(u.username)}
+                        style={{padding:"4px 8px",background:"transparent",border:`1px solid ${T.red}`,color:T.red,fontSize:11,cursor:"pointer",borderRadius:3}}>✕</button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add user form */}
+            <div style={{borderTop:`1px solid ${T.border}`,paddingTop:16}}>
+              <div style={{color:T.textDim,fontSize:11,letterSpacing:1,marginBottom:10}}>ДОБАВИТЬ ПОЛЬЗОВАТЕЛЯ</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <input value={newUsername} onChange={e=>setNewUsername(e.target.value)}
+                  placeholder="Логин"
+                  style={{flex:1,minWidth:110,background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,borderRadius:4,fontFamily:"monospace"}}/>
+                <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)}
+                  placeholder="Пароль"
+                  style={{flex:1,minWidth:110,background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,borderRadius:4,fontFamily:"monospace"}}/>
+                <select value={newRole} onChange={e=>setNewRole(e.target.value)}
+                  style={{background:T.panel2,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,borderRadius:4}}>
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+                <button onClick={adminAddUser} disabled={adminLoading}
+                  style={{padding:"7px 18px",background:T.blue,border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:4,opacity:adminLoading?0.6:1}}>
+                  + Добавить
+                </button>
+              </div>
+            </div>
+
+            <div style={{marginTop:16,fontSize:11,color:T.textFaint,textAlign:"right"}}>
+              Вы вошли как: <span style={{color:T.blue}}>{currentUser?.username}</span>
             </div>
           </div>
         </div>
