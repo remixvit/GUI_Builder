@@ -968,7 +968,7 @@ export default function HMIEditor() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    const data = await r.json();
+    const data = await r.json().catch(() => ({ error: "Сервер вернул некорректный ответ (" + r.status + ")" }));
     if (!r.ok) throw new Error(data.error || "Ошибка входа");
     const user = { username: data.username, role: data.role };
     const creds = { username, password };

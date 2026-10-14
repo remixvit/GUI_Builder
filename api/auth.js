@@ -69,7 +69,7 @@ function parseBasicAuth(req) {
 
 export const config = { runtime: "edge" };
 
-export default async function handler(req) {
+async function route(req) {
   const url      = new URL(req.url);
   const pathname = url.pathname;
 
@@ -143,4 +143,18 @@ export default async function handler(req) {
   }
 
   return json({ error: "Not found" }, 404);
+}
+
+export default async function handler(req) {
+  try {
+    // GET /api/ping — keep-alive для Upstash (cron в vercel.json), без авторизации
+    if (new URL(req.url).pathname === "/api/ping") {
+      await kvGet("users");
+      return json({ ok: true });
+    }
+    return await route(req);
+  } catch (e) {
+    console.error(e);
+    return json({ error: "Ошибка сервера: " + (e?.message || "неизвестно") }, 500);
+  }
 }

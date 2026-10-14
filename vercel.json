@@ -1,5 +1,8 @@
 {
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/auth" }
+  ],
+  "crons": [
+    { "path": "/api/ping", "schedule": "0 6 * * *" }
   ]
 }
