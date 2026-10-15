@@ -273,7 +273,7 @@ const DEFS = {
       const hasLabel = !iconOnly && !!(p.label || "BUTTON");
       return (
         <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:p.radius??6,
-          display:"flex",alignItems:"center",justifyContent:"center",position:"relative",
+          display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign),padding:hPad(p.textAlign),position:"relative",
           color:fg,fontSize:p.fontSize||13,fontWeight:600,fontFamily:"monospace",
           boxShadow:active?`0 0 14px ${bg}66`:"none",pointerEvents:"none",userSelect:"none"}}>
           {p.iconName && (
@@ -281,7 +281,7 @@ const DEFS = {
               <IconSVG name={p.iconName} size={p.iconSize||18} color={fg}/>
             </div>
           )}
-          {!iconOnly && <span style={{position:"relative",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"BUTTON"}</span>}
+          {!iconOnly && <span style={{position:"relative",whiteSpace:"pre-line",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"BUTTON"}</span>}
         </div>
       );
     },
@@ -300,7 +300,7 @@ const DEFS = {
           boxShadow:active?`0 0 16px ${bg}88`:"none",pointerEvents:"none",userSelect:"none"}}>
           {p.iconName
             ? <IconSVG name={p.iconName} size={p.iconSize||22} color={fg}/>
-            : (p.label||"OK")
+            : <span style={{whiteSpace:"pre-line",textAlign:"center"}}>{p.label||"OK"}</span>
           }
         </div>
       );
@@ -366,7 +366,7 @@ const DEFS = {
     label:"Label", icon:"T", w:120, h:30,
     render(p, active) {
       const fg = active ? (p.colorActive||T.accent) : (p.colorIdle||T.textDim);
-      return <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",color:fg,fontSize:p.fontSize||13,fontFamily:p.font||"monospace",fontWeight:p.bold?700:600,letterSpacing:p.spacing||0,pointerEvents:"none",userSelect:"none"}}>
+      return <div style={{width:"100%",height:"100%",display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign||"left"),whiteSpace:"pre-line",color:fg,fontSize:p.fontSize||13,fontFamily:p.font||"monospace",fontWeight:p.bold?700:600,letterSpacing:p.spacing||0,pointerEvents:"none",userSelect:"none"}}>
         {p.text||"LABEL"}
       </div>;
     },
@@ -474,12 +474,12 @@ const DEFS = {
       const sz = p.iconSize||16;
       return (
         <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",pointerEvents:"none",gap:2}}>
-          <div style={{flex:1,height:"100%",background:colorLeft,border:`2px solid ${bdLeft}`,borderRadius:`${p.radius??6}px 0 0 ${p.radius??6}px`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,color:fgLeft,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:posLeft?`0 0 12px ${colorLeft}55`:"none",transition:"all 0.15s"}}>
+          <div style={{flex:1,height:"100%",background:colorLeft,border:`2px solid ${bdLeft}`,borderRadius:`${p.radius??6}px 0 0 ${p.radius??6}px`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgLeft,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:posLeft?`0 0 12px ${colorLeft}55`:"none",transition:"all 0.15s"}}>
             {p.iconName && posLeft && <IconSVG name={p.iconName} size={sz} color={fgLeft}/>}
             {labelL}
           </div>
           <div style={{width:3,height:"60%",background:posLeft?bdLeft:bdRight,borderRadius:1,flexShrink:0,opacity:0.5}}/>
-          <div style={{flex:1,height:"100%",background:colorRight,border:`2px solid ${bdRight}`,borderRadius:`0 ${p.radius??6}px ${p.radius??6}px 0`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,color:fgRight,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:!posLeft?`0 0 12px ${colorRight}55`:"none",transition:"all 0.15s"}}>
+          <div style={{flex:1,height:"100%",background:colorRight,border:`2px solid ${bdRight}`,borderRadius:`0 ${p.radius??6}px ${p.radius??6}px 0`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgRight,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:!posLeft?`0 0 12px ${colorRight}55`:"none",transition:"all 0.15s"}}>
             {p.iconName && !posLeft && <IconSVG name={p.iconName} size={sz} color={fgRight}/>}
             {labelR}
           </div>
@@ -501,9 +501,9 @@ const DEFS = {
       return (
         <div style={{width:"100%",height:"100%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
           <div style={{position:"absolute",inset:-haloW-2,borderRadius:(p.radius??6)+haloW+2,border:`${haloW}px solid ${halo}`,boxShadow:active?`0 0 ${haloBlur}px ${halo}, 0 0 ${haloBlur*2}px ${halo}44`:"none",transition:"all 0.2s",pointerEvents:"none"}}/>
-          <div style={{width:"100%",height:"100%",background:bg,borderRadius:p.radius??6,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",color:fg,fontSize:p.fontSize||13,fontWeight:700,fontFamily:"monospace",letterSpacing:1,transition:"all 0.2s"}}>
+          <div style={{width:"100%",height:"100%",background:bg,borderRadius:p.radius??6,display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign),padding:hPad(p.textAlign),position:"relative",color:fg,fontSize:p.fontSize||13,fontWeight:700,fontFamily:"monospace",letterSpacing:1,transition:"all 0.2s"}}>
             {p.iconName && <div style={iconWrapperStyle(iconPos, hasLabel)}><IconSVG name={p.iconName} size={p.iconSize||18} color={fg}/></div>}
-            {!iconOnly && <span style={{position:"relative",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"START"}</span>}
+            {!iconOnly && <span style={{position:"relative",whiteSpace:"pre-line",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"START"}</span>}
           </div>
         </div>
       );
@@ -523,8 +523,8 @@ const DEFS = {
           pointerEvents:"none",userSelect:"none"}}>
           <span style={{fontSize:p.iconSize||18,lineHeight:1,flexShrink:0}}>{icon}</span>
           <div style={{flex:1,overflow:"hidden"}}>
-            <div style={{color:fg,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.label||"ALARM"}</div>
-            {p.subtext&&<div style={{color:active?`${fg}aa`:T.textFaint,fontSize:9,fontFamily:"monospace",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>{p.subtext}</div>}
+            <div style={{color:fg,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis"}}>{p.label||"ALARM"}</div>
+            {p.subtext&&<div style={{color:active?`${fg}aa`:T.textFaint,fontSize:9,fontFamily:"monospace",whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>{p.subtext}</div>}
           </div>
           {/* Status dot */}
           <div style={{width:8,height:8,borderRadius:"50%",background:active?"#fff":T.textFaint,flexShrink:0,boxShadow:active?"0 0 6px #fff":""}}/>
@@ -633,14 +633,14 @@ function elToHTML(el, active) {
   const p = el.props||{};
   const W = el.w, H = el.h;
   switch(el.type) {
-    case "button_rect": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:${p.radius??6}px;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||13}px;font-weight:600;font-family:monospace;box-sizing:border-box;">${p.label||"BUTTON"}</div>`; }
-    case "button_round": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:50%;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||11}px;font-weight:700;font-family:monospace;box-sizing:border-box;">${p.label||"OK"}</div>`; }
+    case "button_rect": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:${p.radius??6}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign)};text-align:${p.textAlign||"center"};white-space:pre-line;padding:${p.textAlign==="left"||p.textAlign==="right"?"0 10px":"0"};color:${fg};font-size:${p.fontSize||13}px;font-weight:600;font-family:monospace;box-sizing:border-box;">${p.label||"BUTTON"}</div>`; }
+    case "button_round": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;color:${fg};font-size:${p.fontSize||11}px;font-weight:700;font-family:monospace;box-sizing:border-box;">${p.label||"OK"}</div>`; }
     case "toggle_switch": { const tr=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:54px;height:28px;background:${tr};border:2px solid ${bd};border-radius:14px;position:relative;box-sizing:border-box;"><div style="position:absolute;top:3px;left:${active?27:3}px;width:18px;height:18px;border-radius:50%;background:${active?"#fff":(p.knobIdle||"#555")};"></div></div></div>`; }
     case "indicator_led": { const c=active?(p.colorActive||T.green):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.green):(p.borderIdle||"#374151"),sz=p.size||28; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:2px solid ${bd};"></div></div>`; }
     case "indicator_bar": { const fill=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),pct=active?(p.value||70):15; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||"#0a0e14"};border:1px solid ${p.borderIdle||"#374151"};border-radius:${p.radius??4}px;overflow:hidden;position:relative;box-sizing:border-box;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${fill};"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${p.textColor||T.text};font-size:11px;font-family:monospace;">${active?`${pct}%`:"0%"}</div></div>`; }
     case "slider_h": { const pct=active?(p.value||60):0,c=p.colorActive||T.accent; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;"><div style="flex:1;height:4px;background:${p.trackColor||"#1e2430"};border-radius:2px;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c};border-radius:2px;"></div></div></div>`; }
     case "display_num": { const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.colorActive||T.accent):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||"#0a0e14"};border:1px solid ${bd};border-radius:${p.radius??4}px;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||22}px;font-family:monospace;font-weight:700;letter-spacing:2px;box-sizing:border-box;">${active?(p.value||"42.5"):"--.-"}</div>`; }
-    case "label_text": { const fg=active?(p.colorActive||T.accent):(p.colorIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||"monospace"};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
+    case "label_text": { const fg=active?(p.colorActive||T.accent):(p.colorIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign||"left")};text-align:${p.textAlign||"left"};white-space:pre-line;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||"monospace"};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
     case "frame_box": { const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;border:${p.borderWidth||2}px solid ${bd};border-radius:${p.radius??6}px;position:relative;background:${p.bgColor||"rgba(255,255,255,0.015)"};box-sizing:border-box;">${p.title?`<div style="position:absolute;top:-8px;left:12px;background:#161b22;padding:0 6px;color:${active?(p.colorActive||T.accent):(p.colorIdle||T.textDim)};font-size:${p.fontSize||11}px;font-family:monospace;">${p.title}</div>`:""}</div>`; }
     case "separator": { const c=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;"><div style="width:100%;height:${p.thickness||2}px;background:${c};border-radius:1px;"></div></div>`; }
     case "gauge": { const value=active?(p.value??75):(p.idleValue??20),minVal=p.minVal??0,maxVal=p.maxVal??100,pct=Math.max(0,Math.min(1,(value-minVal)/(maxVal-minVal))),r=48,cx=70,cy=74,startDeg=220,sweepDeg=280,toRad=d=>(d-90)*Math.PI/180,arcPath=(from,to,radius)=>{const s=toRad(from),e=toRad(to),large=(to-from)>180?1:0;return `M ${cx+radius*Math.cos(s)} ${cy+radius*Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx+radius*Math.cos(e)} ${cy+radius*Math.sin(e)}`;},endAngle=startDeg+sweepDeg*pct,nRad=toRad(endAngle),nx=cx+(r-8)*Math.cos(nRad),ny=cy+(r-8)*Math.sin(nRad),fc=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"),fg=active?(p.colorActive||T.accent):(p.textIdle||T.textDim),sw=p.strokeWidth||8; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><svg width="${cx*2}" height="${cy*2}" overflow="visible"><path d="${arcPath(startDeg,startDeg+sweepDeg,r)}" fill="none" stroke="${p.trackColor||'#1e2430'}" stroke-width="${sw}" stroke-linecap="round"/>${pct>0?`<path d="${arcPath(startDeg,endAngle,r)}" fill="none" stroke="${fc}" stroke-width="${sw}" stroke-linecap="round"/>`:""}<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="${fc}" stroke="${p.trackColor||'#1e2430'}" stroke-width="2"/><text x="${cx}" y="${cy+22}" text-anchor="middle" fill="${fg}" font-size="${p.fontSize||14}" font-family="monospace" font-weight="700">${active?value:"--"}</text>${p.unit?`<text x="${cx}" y="${cy+36}" text-anchor="middle" fill="${fg}" font-size="9" font-family="monospace" opacity="0.7">${p.unit}</text>`:""}</svg></div>`; }
@@ -687,6 +687,36 @@ function exportCSV(pages, sharedElements, cW, cH) {
   rows.push([],[`# Canvas: ${cW}x${cH}`]);
   const csv = rows.map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
   const a = document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"})); a.download="hmi_coords.csv"; a.click();
+}
+
+// ─── TEXT ALIGNMENT HELPERS ──────────────────────────────────────────────────
+// Горизонталь: left | center | right, вертикаль: top | middle | bottom
+const hAlignStyle = a => ({justifyContent: a==="left"?"flex-start":a==="right"?"flex-end":"center", textAlign: a||"center"});
+const vAlignItems = a => a==="top"?"flex-start":a==="bottom"?"flex-end":"center";
+const hPad = a => (a==="left"||a==="right") ? "0 10px" : 0;
+const cssJc = a => a==="left"?"flex-start":a==="right"?"flex-end":"center";
+const cssAi = a => a==="top"?"flex-start":a==="bottom"?"flex-end":"center";
+
+function AlignPicker({h, v, onH, onV, defaultH="center"}) {
+  const curH = h || defaultH, curV = v || "middle";
+  const seg = (opts, cur, onPick) => (
+    <div style={{display:"flex",flex:1,gap:2}}>
+      {opts.map(([val,lbl,tip]) => (
+        <div key={val} title={tip} onClick={()=>onPick(val)}
+          style={{flex:1,textAlign:"center",padding:"4px 0",fontSize:10,cursor:"pointer",borderRadius:3,fontFamily:"monospace",
+            background:cur===val?T.accentBg:T.bg,border:`1px solid ${cur===val?T.accent:T.border}`,color:cur===val?T.accent:T.textDim}}>{lbl}</div>
+      ))}
+    </div>
+  );
+  return (
+    <div style={{marginBottom:8}}>
+      <div style={{color:T.textDim,fontSize:11,marginBottom:3}}>Выравнивание текста</div>
+      <div style={{display:"flex",gap:6}}>
+        {seg([["left","⇤","По левому краю"],["center","↔","По центру"],["right","⇥","По правому краю"]], curH, onH)}
+        {seg([["top","⤒","Вверху"],["middle","↕","По центру"],["bottom","⤓","Внизу"]], curV, onV)}
+      </div>
+    </div>
+  );
 }
 
 // ─── COLOR PICKER ROW ─────────────────────────────────────────────────────────
@@ -825,7 +855,7 @@ function CoordField({label, value, onCommit, vars}) {
 }
 
 // ─── PROP FIELD ───────────────────────────────────────────────────────────────
-function PropField({label, value, onChange, type="text", min, max, placeholder}) {
+function PropField({label, value, onChange, type="text", min, max, placeholder, multiline}) {
   const inputStyle = {width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"5px 8px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"};
   const fractional = max !== undefined && max <= 1;
   return (
@@ -834,8 +864,12 @@ function PropField({label, value, onChange, type="text", min, max, placeholder})
       {type === "number"
         ? <NumInput value={value} onCommit={onChange} min={min} max={max} placeholder={placeholder}
             step={fractional ? 0.1 : 1} bigStep={fractional ? 0.5 : 10} style={inputStyle}/>
-        : <input type={type} value={value??""} placeholder={placeholder}
-            onChange={e=>onChange(e.target.value)} style={inputStyle}/>}
+        : multiline
+          ? <textarea value={value??""} placeholder={placeholder} rows={2} spellCheck={false}
+              title="Enter — новая строка"
+              onChange={e=>onChange(e.target.value)} style={{...inputStyle,resize:"vertical",minHeight:46,lineHeight:1.4}}/>
+          : <input type={type} value={value??""} placeholder={placeholder}
+              onChange={e=>onChange(e.target.value)} style={inputStyle}/>}
     </div>
   );
 }
@@ -1895,7 +1929,7 @@ export default function HMIEditor() {
   // Keyboard: delete + undo/redo + copy/paste/duplicate
   useEffect(() => {
     const handler = (e) => {
-      if (e.target.tagName === "INPUT") return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
       const hasSel = !!selectedRef.current;
       if ((e.key==="Delete"||e.key==="Backspace") && hasSel) { deleteSelected(); return; }
       if (e.ctrlKey || e.metaKey) {
@@ -2067,14 +2101,16 @@ export default function HMIEditor() {
           <div>
             {/* Common props by type */}
             {(selectedEl.type==="button_rect"||selectedEl.type==="button_round") && <>
-              <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="BUTTON"/>
+              <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="BUTTON" multiline/>
+              {selectedEl.type==="button_rect" && <AlignPicker h={p.textAlign} v={p.textVAlign} onH={v=>up("textAlign",v)} onV={v=>up("textVAlign",v)}/>}
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={48}/>
               <PropField label="Радиус скругления" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={50}/>
               <IconPicker value={p.iconName} iconPos={p.iconPos||"left"} iconSize={p.iconSize||18}
                 onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
             </>}
             {selectedEl.type==="label_text" && <>
-              <PropField label="Текст" value={p.text} onChange={v=>up("text",v)} placeholder="LABEL"/>
+              <PropField label="Текст" value={p.text} onChange={v=>up("text",v)} placeholder="LABEL" multiline/>
+              <AlignPicker defaultH="left" h={p.textAlign} v={p.textVAlign} onH={v=>up("textAlign",v)} onV={v=>up("textVAlign",v)}/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={72}/>
               <div style={{marginBottom:6,display:"flex",alignItems:"center",gap:8}}>
                 <div style={{color:T.textDim,fontSize:9}}>Жирный</div>
@@ -2128,15 +2164,16 @@ export default function HMIEditor() {
               <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={16}/>
             </>}
             {selectedEl.type==="toggle_2pos" && <>
-              <PropField label="Надпись LEFT (idle)" value={p.labelLeft} onChange={v=>up("labelLeft",v)} placeholder="OFF"/>
-              <PropField label="Надпись RIGHT (active)" value={p.labelRight} onChange={v=>up("labelRight",v)} placeholder="ON"/>
+              <PropField label="Надпись LEFT (idle)" value={p.labelLeft} onChange={v=>up("labelLeft",v)} placeholder="OFF" multiline/>
+              <PropField label="Надпись RIGHT (active)" value={p.labelRight} onChange={v=>up("labelRight",v)} placeholder="ON" multiline/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={24}/>
               <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={30}/>
               <IconPicker value={p.iconName} iconPos={p.iconPos||"center"} iconSize={p.iconSize||16}
                 onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
             </>}
             {selectedEl.type==="button_halo" && <>
-              <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="START"/>
+              <PropField label="Надпись" value={p.label} onChange={v=>up("label",v)} placeholder="START" multiline/>
+              <AlignPicker h={p.textAlign} v={p.textVAlign} onH={v=>up("textAlign",v)} onV={v=>up("textVAlign",v)}/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={36}/>
               <PropField label="Радиус" value={p.radius} onChange={v=>up("radius",v)} type="number" min={0} max={50}/>
               <PropField label="Толщина обода (px)" value={p.haloWidth} onChange={v=>up("haloWidth",v)} type="number" min={1} max={12}/>
@@ -2145,8 +2182,8 @@ export default function HMIEditor() {
                 onIconChange={v=>up("iconName",v)} onPosChange={v=>up("iconPos",v)} onSizeChange={v=>up("iconSize",v)}/>
             </>}
             {selectedEl.type==="alarm_indicator" && <>
-              <PropField label="Текст" value={p.label} onChange={v=>up("label",v)} placeholder="ALARM"/>
-              <PropField label="Подтекст" value={p.subtext} onChange={v=>up("subtext",v)} placeholder="Fault code 0x04"/>
+              <PropField label="Текст" value={p.label} onChange={v=>up("label",v)} placeholder="ALARM" multiline/>
+              <PropField label="Подтекст" value={p.subtext} onChange={v=>up("subtext",v)} placeholder="Fault code 0x04" multiline/>
               <PropField label="Иконка (emoji)" value={p.icon} onChange={v=>up("icon",v)} placeholder="⚠"/>
               <PropField label="Размер иконки" value={p.iconSize} onChange={v=>up("iconSize",v)} type="number" min={8} max={36}/>
               <PropField label="Размер шрифта" value={p.fontSize} onChange={v=>up("fontSize",v)} type="number" min={8} max={20}/>
