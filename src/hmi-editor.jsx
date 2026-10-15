@@ -921,31 +921,48 @@ function makeZip(files) {
   return new Blob(chunks, {type: "application/zip"});
 }
 
-// Возвращает {blob, count}: ZIP с иконками и таблицей icons.csv; count — число элементов
-async function buildIconsZip(pages, sharedElements, cW, cH, bgColor, bgImage) {
+const blobBytes = async blob => new Uint8Array(await blob.arrayBuffer());
+
+// Нумерация файлов для DGUS — сквозная, без пропусков:
+//   страница i  -> «2i.png» (все кнопки не нажаты) и «2i+1.png» (все нажаты);
+//   иконки продолжаются сразу после страниц: первая иконка имеет индекс 2·(число страниц).
+// Каждая иконка — пара: чётный индекс «выкл», следующий «вкл».
+async function buildPageFiles(pages, sharedElements, cW, cH, bgColor, bgImage) {
+  const files = [];
+  for (let i = 0; i < pages.length; i++) {
+    const els = [...sharedElements, ...pages[i].elements];
+    for (const active of [false, true]) {
+      const blob = await renderRegionBlob({x: 0, y: 0, w: cW, h: cH}, els, active, cW, cH, bgColor, bgImage);
+      files.push({name: `${2 * i + (active ? 1 : 0)}.png`, data: await blobBytes(blob)});
+    }
+  }
+  return files;
+}
+
+// Иконки элементов с флажком «Иконки для DGUS»; startIndex — индекс первой иконки.
+// Возвращает {files, count}: PNG-файлы (имя = индекс) и таблицу icons.csv
+async function buildIconFiles(pages, sharedElements, startIndex, cW, cH, bgColor, bgImage) {
   const jobs = [
     ...sharedElements.filter(wantsIcons).map(el => ({el, page: "shared"})),
     ...pages.flatMap(pg => pg.elements.filter(wantsIcons).map(el => ({el, page: pg.name}))),
   ];
-  if (!jobs.length) return {blob: null, count: 0};
-  const pad = n => String(n).padStart(3, "0");
+  if (!jobs.length) return {files: [], count: 0};
   const files = [];
   const rows = [["icon_off", "icon_on", "file_off", "file_on", "page", "element", "type", "label", "x", "y", "w", "h"]];
   for (let k = 0; k < jobs.length; k++) {
     const {el, page} = jobs[k];
     const region = {x: el.x, y: el.y, w: el.w, h: el.h};
-    const offName = `${pad(2 * k)}_${el.id}_off.png`;
-    const onName = `${pad(2 * k + 1)}_${el.id}_on.png`;
-    for (const [active, name] of [[false, offName], [true, onName]]) {
+    const offIdx = startIndex + 2 * k, onIdx = offIdx + 1;
+    for (const [active, idx] of [[false, offIdx], [true, onIdx]]) {
       const blob = await renderRegionBlob(region, [el], active, cW, cH, bgColor, bgImage);
-      files.push({name, data: new Uint8Array(await blob.arrayBuffer())});
+      files.push({name: `${idx}.png`, data: await blobBytes(blob)});
     }
     const p = el.props || {};
-    rows.push([2 * k, 2 * k + 1, offName, onName, page, el.id, el.type, p.label || p.text || p.title || "", el.x, el.y, el.w, el.h]);
+    rows.push([offIdx, onIdx, `${offIdx}.png`, `${onIdx}.png`, page, el.id, el.type, p.label || p.text || p.title || "", el.x, el.y, el.w, el.h]);
   }
-  const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const csv = "\uFEFF" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
   files.push({name: "icons.csv", data: new TextEncoder().encode(csv)});
-  return {blob: makeZip(files), count: jobs.length};
+  return {files, count: jobs.length};
 }
 
 
@@ -2296,27 +2313,30 @@ export default function HMIEditor() {
     setTimeout(() => exportPNG(elements, sharedElements, true, `${activeNum}.png`, cW, cH, bgColor, bgImage), 350);
   };
 
+  const NO_ICONS_MSG = "Нет элементов для экспорта иконок. Включите флажок «Иконки для DGUS» в свойствах элемента (по умолчанию он включён у Toggle, 2-Pos Toggle и LED).";
+
+  // Только иконки; нумерация продолжается после страниц (первая иконка = 2 × число страниц)
   const handleExportIcons = async () => {
     try {
-      const {blob, count} = await buildIconsZip(allPages, sharedElements, cW, cH, bgColor, bgImage);
-      if (!count) {
-        alert("Нет элементов для экспорта иконок. Включите флажок «Иконки для DGUS» в свойствах элемента (по умолчанию он включён у Toggle, 2-Pos Toggle и LED).");
-        return;
-      }
-      downloadBlob(blob, "icons.zip");
+      const {files, count} = await buildIconFiles(allPages, sharedElements, allPages.length * 2, cW, cH, bgColor, bgImage);
+      if (!count) { alert(NO_ICONS_MSG); return; }
+      downloadBlob(makeZip(files), "icons.zip");
     } catch (e) {
       console.error(e);
       alert("Не удалось собрать иконки: " + (e?.message || e));
     }
   };
 
-  const handleExportAll = () => {
-    allPages.forEach((p, i) => {
-      setTimeout(() => {
-        exportPNG(p.elements, sharedElements, false, `${i * 2}.png`, cW, cH, bgColor, bgImage);
-        setTimeout(() => exportPNG(p.elements, sharedElements, true, `${i * 2 + 1}.png`, cW, cH, bgColor, bgImage), 300);
-      }, i * 700);
-    });
+  // Всё для DGUS одним ZIP: страницы 0..2N-1, затем иконки 2N... и icons.csv
+  const handleExportAll = async () => {
+    try {
+      const pageFiles = await buildPageFiles(allPages, sharedElements, cW, cH, bgColor, bgImage);
+      const {files: iconFiles} = await buildIconFiles(allPages, sharedElements, allPages.length * 2, cW, cH, bgColor, bgImage);
+      downloadBlob(makeZip([...pageFiles, ...iconFiles]), "dgus_export.zip");
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось собрать экспорт: " + (e?.message || e));
+    }
   };
 
   // ── Render element ──
@@ -2843,11 +2863,11 @@ export default function HMIEditor() {
             style={{padding:"6px 15px",background:T.accent,border:"none",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:4}}>
             ⬇ 2×PNG
           </button>
-          <button onClick={handleExportAll} title="Экспорт всех страниц"
+          <button onClick={handleExportAll} title="Всё для DGUS одним ZIP: страницы 0, 1, 2… (2i — кнопки не нажаты, 2i+1 — нажаты), затем иконки"
             style={{padding:"6px 12px",background:"transparent",border:`1px solid ${T.accent}`,color:T.accent,fontSize:12,cursor:"pointer",borderRadius:4}}>
             ⬇ ALL
           </button>
-          <button onClick={handleExportIcons} title="Иконки состояний для DGUS: по 2 файла (выкл / вкл) на элемент, ZIP + таблица icons.csv"
+          <button onClick={handleExportIcons} title="Только иконки (по 2 файла выкл / вкл на элемент) + icons.csv. Нумерация продолжается после страниц"
             style={{padding:"6px 12px",background:"transparent",border:`1px solid ${T.green}`,color:T.green,fontSize:12,cursor:"pointer",borderRadius:4}}>
             ⬇ ИКОНКИ
           </button>
