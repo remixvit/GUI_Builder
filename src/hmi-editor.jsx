@@ -265,16 +265,16 @@ const DEFS = {
   button_rect: {
     label:"Button", icon:"▭", w:120, h:44,
     render(p, active) {
-      const bg = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
-      const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
-      const fg = active ? (p.textActive||"#ffffff") : (p.textIdle||T.textDim);
+      const bg = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
+      const bd = active ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
+      const fg = active ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
       const iconPos = p.iconPos || "left";
       const iconOnly = iconPos === "icon-only";
       const hasLabel = !iconOnly && !!(p.label || "BUTTON");
       return (
-        <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:p.radius??6,
+        <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:p.radius??TH.radius??6,
           display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign),padding:hPad(p.textAlign),position:"relative",
-          color:fg,fontSize:p.fontSize||13,fontWeight:600,fontFamily:"monospace",
+          color:fg,fontSize:p.fontSize||13,fontWeight:600,fontFamily:TH.font,
           boxShadow:active?`0 0 14px ${bg}66`:"none",pointerEvents:"none",userSelect:"none"}}>
           {p.iconName && (
             <div style={iconWrapperStyle(iconPos, hasLabel)}>
@@ -289,14 +289,14 @@ const DEFS = {
   button_round: {
     label:"Round", icon:"◯", w:64, h:64,
     render(p, active) {
-      const bg = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
-      const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
-      const fg = active ? (p.textActive||"#ffffff") : (p.textIdle||T.textDim);
+      const bg = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
+      const bd = active ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
+      const fg = active ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
       const iconOnly = !p.label || p.iconPos === "icon-only";
       return (
         <div style={{width:"100%",height:"100%",background:bg,border:`2px solid ${bd}`,borderRadius:"50%",
           display:"flex",alignItems:"center",justifyContent:"center",position:"relative",
-          color:fg,fontSize:p.fontSize||11,fontWeight:700,fontFamily:"monospace",
+          color:fg,fontSize:p.fontSize||11,fontWeight:700,fontFamily:TH.font,
           boxShadow:active?`0 0 16px ${bg}88`:"none",pointerEvents:"none",userSelect:"none"}}>
           {p.iconName
             ? <IconSVG name={p.iconName} size={p.iconSize||22} color={fg}/>
@@ -309,11 +309,11 @@ const DEFS = {
   toggle_switch: {
     label:"Toggle", icon:"⇌", w:72, h:36,
     render(p, active) {
-      const track = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
-      const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
+      const track = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
+      const bd = active ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
       return <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
         <div style={{width:54,height:28,background:track,border:`2px solid ${bd}`,borderRadius:14,position:"relative",boxShadow:active?`0 0 10px ${track}88`:"none",transition:"all 0.15s"}}>
-          <div style={{position:"absolute",top:3,left:active?27:3,width:18,height:18,borderRadius:"50%",background:active?"#fff":(p.knobIdle||"#555"),transition:"left 0.15s"}}/>
+          <div style={{position:"absolute",top:3,left:active?27:3,width:18,height:18,borderRadius:"50%",background:active?TH.textActive:(p.knobIdle||TH.textIdle),transition:"left 0.15s"}}/>
         </div>
       </div>;
     },
@@ -321,8 +321,8 @@ const DEFS = {
   indicator_led: {
     label:"LED", icon:"●", w:44, h:44,
     render(p, active) {
-      const c = active ? (p.colorActive||T.green) : (p.colorIdle||"#1e2430");
-      const bd = active ? (p.colorActive||T.green) : (p.borderIdle||"#374151");
+      const c = active ? (p.colorActive||TH.ok) : (p.colorIdle||TH.surface);
+      const bd = active ? (p.colorActive||TH.ok) : (p.borderIdle||TH.border);
       return <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
         <div style={{width:p.size||28,height:p.size||28,borderRadius:"50%",background:c,border:`2px solid ${bd}`,boxShadow:active?`0 0 16px ${c}`:active?"none":"none"}}/>
       </div>;
@@ -331,11 +331,11 @@ const DEFS = {
   indicator_bar: {
     label:"Bar", icon:"▬", w:150, h:36,
     render(p, active) {
-      const fill = active ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
+      const fill = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
       const pct = active ? (p.value||70) : 15;
-      return <div style={{width:"100%",height:"100%",background:p.bgColor||"#0a0e14",border:`1px solid ${p.borderIdle||"#374151"}`,borderRadius:p.radius??4,overflow:"hidden",position:"relative",pointerEvents:"none"}}>
+      return <div style={{width:"100%",height:"100%",background:p.bgColor||TH.sunken,border:`1px solid ${p.borderIdle||TH.border}`,borderRadius:p.radius??TH.radius??4,overflow:"hidden",position:"relative",pointerEvents:"none"}}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:fill,transition:"width 0.2s"}}/>
-        {p.showValue!==false && <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:p.textColor||T.text,fontSize:11,fontFamily:"monospace"}}>{active?`${pct}%`:"0%"}</div>}
+        {p.showValue!==false && <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:p.textColor||TH.text,fontSize:11,fontFamily:TH.font}}>{active?`${pct}%`:"0%"}</div>}
       </div>;
     },
   },
@@ -343,11 +343,11 @@ const DEFS = {
     label:"Slider", icon:"⎍", w:160, h:36,
     render(p, active) {
       const pct = active ? (p.value||60) : 0;
-      const c = p.colorActive||T.accent;
+      const c = p.colorActive||TH.accent;
       return <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",padding:"0 10px",boxSizing:"border-box",pointerEvents:"none"}}>
-        <div style={{flex:1,height:4,background:p.trackColor||"#1e2430",borderRadius:2,position:"relative"}}>
+        <div style={{flex:1,height:4,background:p.trackColor||TH.surface,borderRadius:2,position:"relative"}}>
           <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${pct}%`,background:c,borderRadius:2}}/>
-          <div style={{position:"absolute",left:`${pct}%`,top:"50%",transform:"translate(-50%,-50%)",width:14,height:14,borderRadius:"50%",background:active?c:(p.knobIdle||"#374151"),border:`2px solid ${active?"#fff":"#555"}`,boxShadow:active?`0 0 8px ${c}66`:"none"}}/>
+          <div style={{position:"absolute",left:`${pct}%`,top:"50%",transform:"translate(-50%,-50%)",width:14,height:14,borderRadius:"50%",background:active?c:(p.knobIdle||TH.border),border:`2px solid ${active?TH.textActive:TH.textIdle}`,boxShadow:active?`0 0 8px ${c}66`:"none"}}/>
         </div>
       </div>;
     },
@@ -355,9 +355,9 @@ const DEFS = {
   display_num: {
     label:"Number", icon:"#", w:110, h:48,
     render(p, active) {
-      const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
-      const fg = active ? (p.colorActive||T.accent) : (p.textIdle||T.textDim);
-      return <div style={{width:"100%",height:"100%",background:p.bgColor||"#0a0e14",border:`1px solid ${bd}`,borderRadius:p.radius??4,display:"flex",alignItems:"center",justifyContent:"center",color:fg,fontSize:p.fontSize||22,fontFamily:"monospace",fontWeight:700,letterSpacing:2,pointerEvents:"none"}}>
+      const bd = active ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
+      const fg = active ? (p.colorActive||TH.accent) : (p.textIdle||TH.textIdle);
+      return <div style={{width:"100%",height:"100%",background:p.bgColor||TH.sunken,border:`1px solid ${bd}`,borderRadius:p.radius??TH.radius??4,display:"flex",alignItems:"center",justifyContent:"center",color:fg,fontSize:p.fontSize||22,fontFamily:TH.font,fontWeight:700,letterSpacing:2,pointerEvents:"none"}}>
         {active?(p.value||"42.5"):"--.-"}
       </div>;
     },
@@ -365,8 +365,8 @@ const DEFS = {
   label_text: {
     label:"Label", icon:"T", w:120, h:30,
     render(p, active) {
-      const fg = active ? (p.colorActive||T.accent) : (p.colorIdle||T.textDim);
-      return <div style={{width:"100%",height:"100%",display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign||"left"),whiteSpace:"pre-line",color:fg,fontSize:p.fontSize||13,fontFamily:p.font||"monospace",fontWeight:p.bold?700:600,letterSpacing:p.spacing||0,pointerEvents:"none",userSelect:"none"}}>
+      const fg = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.textIdle);
+      return <div style={{width:"100%",height:"100%",display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign||"left"),whiteSpace:"pre-line",color:fg,fontSize:p.fontSize||13,fontFamily:p.font||TH.font,fontWeight:p.bold?700:600,letterSpacing:p.spacing||0,pointerEvents:"none",userSelect:"none"}}>
         {p.text||"LABEL"}
       </div>;
     },
@@ -374,17 +374,17 @@ const DEFS = {
   frame_box: {
     label:"Frame", icon:"▣", w:200, h:130,
     render(p, active) {
-      const bd = active ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
+      const bd = active ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
       const bg = p.bgColor||"rgba(255,255,255,0.015)";
-      return <div style={{width:"100%",height:"100%",border:`${p.borderWidth||2}px solid ${bd}`,borderRadius:p.radius??6,position:"relative",background:bg,pointerEvents:"none"}}>
-        {p.title&&<div style={{position:"absolute",top:-(p.fontSize||11)/2-3,left:12,background:T.panel,padding:"0 6px",color:active?(p.colorActive||T.accent):(p.colorIdle||T.textDim),fontSize:p.fontSize||11,fontFamily:"monospace"}}>{p.title}</div>}
+      return <div style={{width:"100%",height:"100%",border:`${p.borderWidth||2}px solid ${bd}`,borderRadius:p.radius??TH.radius??6,position:"relative",background:bg,pointerEvents:"none"}}>
+        {p.title&&<div style={{position:"absolute",top:-(p.fontSize||11)/2-3,left:12,background:TH.bg,padding:"0 6px",color:active?(p.colorActive||TH.accent):(p.colorIdle||TH.textIdle),fontSize:p.fontSize||11,fontFamily:TH.font}}>{p.title}</div>}
       </div>;
     },
   },
   separator: {
     label:"Line", icon:"─", w:200, h:4,
     render(p, active) {
-      const c = active ? (p.colorActive||T.accent) : (p.colorIdle||"#374151");
+      const c = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.border);
       return <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",pointerEvents:"none"}}>
         <div style={{width:"100%",height:p.thickness||2,background:c,borderRadius:1,opacity:p.opacity||1}}/>
       </div>;
@@ -410,10 +410,10 @@ const DEFS = {
         return `M ${cx + radius * Math.cos(s)} ${cy + radius * Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx + radius * Math.cos(e)} ${cy + radius * Math.sin(e)}`;
       };
 
-      const trackColor  = p.trackColor  || "#1e2430";
-      const fillColor   = active ? (p.colorActive || T.accent) : (p.colorIdle || "#374151");
-      const needleColor = active ? (p.colorActive || T.accent) : "#555";
-      const fgColor     = active ? (p.colorActive || T.accent) : (p.textIdle || T.textDim);
+      const trackColor  = p.trackColor  || TH.surface;
+      const fillColor   = active ? (p.colorActive || TH.accent) : (p.colorIdle || TH.border);
+      const needleColor = active ? (p.colorActive || TH.accent) : TH.textIdle;
+      const fgColor     = active ? (p.colorActive || TH.accent) : (p.textIdle || TH.textIdle);
       const bgColor2    = p.bgColor || "transparent";
 
       const endAngle = startDeg + sweepDeg * pct;
@@ -432,7 +432,7 @@ const DEFS = {
       }
 
       return (
-        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:bgColor2,borderRadius:p.radius??6}}>
+        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",background:bgColor2,borderRadius:p.radius??TH.radius??6}}>
           <svg width={cx*2} height={cy*2} style={{overflow:"visible"}}>
             {/* Track arc */}
             <path d={arcPath(startDeg, startDeg + sweepDeg, r)} fill="none" stroke={trackColor} strokeWidth={p.strokeWidth||8} strokeLinecap="round"/>
@@ -446,13 +446,13 @@ const DEFS = {
               style={{filter: active ? `drop-shadow(0 0 3px ${needleColor})` : "none"}}/>
             <circle cx={cx} cy={cy} r={5} fill={fillColor} stroke={trackColor} strokeWidth={2}/>
             {/* Value */}
-            <text x={cx} y={cy + 22} textAnchor="middle" fill={fgColor} fontSize={p.fontSize||14} fontFamily="monospace" fontWeight={700} letterSpacing={1}>{active ? value : "--"}</text>
+            <text x={cx} y={cy + 22} textAnchor="middle" fill={fgColor} fontSize={p.fontSize||14} fontFamily={TH.font} fontWeight={700} letterSpacing={1}>{active ? value : "--"}</text>
             {/* Label */}
-            {p.unit && <text x={cx} y={cy + 36} textAnchor="middle" fill={fgColor} fontSize={9} fontFamily="monospace" opacity={0.7}>{p.unit}</text>}
+            {p.unit && <text x={cx} y={cy + 36} textAnchor="middle" fill={fgColor} fontSize={9} fontFamily={TH.font} opacity={0.7}>{p.unit}</text>}
             {/* Min/Max labels */}
             {p.showMinMax !== false && <>
-              <text x={cx + (r+14)*Math.cos(toRad(startDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily="monospace" opacity={0.5}>{minVal}</text>
-              <text x={cx + (r+14)*Math.cos(toRad(startDeg+sweepDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg+sweepDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily="monospace" opacity={0.5}>{maxVal}</text>
+              <text x={cx + (r+14)*Math.cos(toRad(startDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily={TH.font} opacity={0.5}>{minVal}</text>
+              <text x={cx + (r+14)*Math.cos(toRad(startDeg+sweepDeg))} y={cy + (r+14)*Math.sin(toRad(startDeg+sweepDeg))} textAnchor="middle" fill={fgColor} fontSize={8} fontFamily={TH.font} opacity={0.5}>{maxVal}</text>
             </>}
           </svg>
         </div>
@@ -463,23 +463,23 @@ const DEFS = {
     label:"2-Pos Toggle", icon:"⊣", w:140, h:44,
     render(p, active) {
       const posLeft = !active;
-      const colorLeft  = posLeft  ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
-      const colorRight = !posLeft ? (p.colorActive||T.accent) : (p.colorIdle||"#1e2430");
-      const bdLeft  = posLeft  ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
-      const bdRight = !posLeft ? (p.colorActive||T.accent) : (p.borderIdle||"#374151");
-      const fgLeft  = posLeft  ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
-      const fgRight = !posLeft ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const colorLeft  = posLeft  ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
+      const colorRight = !posLeft ? (p.colorActive||TH.accent) : (p.colorIdle||TH.surface);
+      const bdLeft  = posLeft  ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
+      const bdRight = !posLeft ? (p.colorActive||TH.accent) : (p.borderIdle||TH.border);
+      const fgLeft  = posLeft  ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
+      const fgRight = !posLeft ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
       const labelL = p.labelLeft  || "OFF";
       const labelR = p.labelRight || "ON";
       const sz = p.iconSize||16;
       return (
         <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",pointerEvents:"none",gap:2}}>
-          <div style={{flex:1,height:"100%",background:colorLeft,border:`2px solid ${bdLeft}`,borderRadius:`${p.radius??6}px 0 0 ${p.radius??6}px`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgLeft,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:posLeft?`0 0 12px ${colorLeft}55`:"none",transition:"all 0.15s"}}>
+          <div style={{flex:1,height:"100%",background:colorLeft,border:`2px solid ${bdLeft}`,borderRadius:`${p.radius??TH.radius??6}px 0 0 ${p.radius??TH.radius??6}px`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgLeft,fontSize:p.fontSize||12,fontWeight:700,fontFamily:TH.font,boxShadow:posLeft?`0 0 12px ${colorLeft}55`:"none",transition:"all 0.15s"}}>
             {p.iconName && posLeft && <IconSVG name={p.iconName} size={sz} color={fgLeft}/>}
             {labelL}
           </div>
           <div style={{width:3,height:"60%",background:posLeft?bdLeft:bdRight,borderRadius:1,flexShrink:0,opacity:0.5}}/>
-          <div style={{flex:1,height:"100%",background:colorRight,border:`2px solid ${bdRight}`,borderRadius:`0 ${p.radius??6}px ${p.radius??6}px 0`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgRight,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",boxShadow:!posLeft?`0 0 12px ${colorRight}55`:"none",transition:"all 0.15s"}}>
+          <div style={{flex:1,height:"100%",background:colorRight,border:`2px solid ${bdRight}`,borderRadius:`0 ${p.radius??TH.radius??6}px ${p.radius??TH.radius??6}px 0`,display:"flex",alignItems:"center",justifyContent:"center",gap:4,whiteSpace:"pre-line",textAlign:"center",color:fgRight,fontSize:p.fontSize||12,fontWeight:700,fontFamily:TH.font,boxShadow:!posLeft?`0 0 12px ${colorRight}55`:"none",transition:"all 0.15s"}}>
             {p.iconName && !posLeft && <IconSVG name={p.iconName} size={sz} color={fgRight}/>}
             {labelR}
           </div>
@@ -490,9 +490,9 @@ const DEFS = {
   button_halo: {
     label:"Halo Button", icon:"⊙", w:120, h:48,
     render(p, active) {
-      const bg   = active ? (p.colorActive||T.accent) : (p.colorIdle||"#0d1117");
-      const halo = active ? (p.colorActive||T.accent) : (p.haloIdle||"#374151");
-      const fg   = active ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const bg   = active ? (p.colorActive||TH.accent) : (p.colorIdle||TH.sunken);
+      const halo = active ? (p.colorActive||TH.accent) : (p.haloIdle||TH.border);
+      const fg   = active ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
       const haloW = p.haloWidth ?? 3;
       const haloBlur = active ? (p.haloBlur ?? 14) : 0;
       const iconPos = p.iconPos || "left";
@@ -500,8 +500,8 @@ const DEFS = {
       const hasLabel = !iconOnly;
       return (
         <div style={{width:"100%",height:"100%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-          <div style={{position:"absolute",inset:-haloW-2,borderRadius:(p.radius??6)+haloW+2,border:`${haloW}px solid ${halo}`,boxShadow:active?`0 0 ${haloBlur}px ${halo}, 0 0 ${haloBlur*2}px ${halo}44`:"none",transition:"all 0.2s",pointerEvents:"none"}}/>
-          <div style={{width:"100%",height:"100%",background:bg,borderRadius:p.radius??6,display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign),padding:hPad(p.textAlign),position:"relative",color:fg,fontSize:p.fontSize||13,fontWeight:700,fontFamily:"monospace",letterSpacing:1,transition:"all 0.2s"}}>
+          <div style={{position:"absolute",inset:-haloW-2,borderRadius:(p.radius??TH.radius??6)+haloW+2,border:`${haloW}px solid ${halo}`,boxShadow:active?`0 0 ${haloBlur}px ${halo}, 0 0 ${haloBlur*2}px ${halo}44`:"none",transition:"all 0.2s",pointerEvents:"none"}}/>
+          <div style={{width:"100%",height:"100%",background:bg,borderRadius:p.radius??TH.radius??6,display:"flex",alignItems:vAlignItems(p.textVAlign),...hAlignStyle(p.textAlign),padding:hPad(p.textAlign),position:"relative",color:fg,fontSize:p.fontSize||13,fontWeight:700,fontFamily:TH.font,letterSpacing:1,transition:"all 0.2s"}}>
             {p.iconName && <div style={iconWrapperStyle(iconPos, hasLabel)}><IconSVG name={p.iconName} size={p.iconSize||18} color={fg}/></div>}
             {!iconOnly && <span style={{position:"relative",whiteSpace:"pre-line",...labelNudge(p.iconName?iconPos:null)}}>{p.label||"START"}</span>}
           </div>
@@ -512,22 +512,22 @@ const DEFS = {
   alarm_indicator: {
     label:"Alarm", icon:"⚠", w:160, h:48,
     render(p, active) {
-      const c  = active ? (p.colorActive||T.red) : (p.colorIdle||"#1e2430");
-      const bd = active ? (p.colorActive||T.red) : (p.borderIdle||"#374151");
-      const fg = active ? (p.textActive||"#fff") : (p.textIdle||T.textDim);
+      const c  = active ? (p.colorActive||TH.alarm) : (p.colorIdle||TH.surface);
+      const bd = active ? (p.colorActive||TH.alarm) : (p.borderIdle||TH.border);
+      const fg = active ? (p.textActive||TH.textActive) : (p.textIdle||TH.textIdle);
       const icon = p.icon || "⚠";
       return (
-        <div style={{width:"100%",height:"100%",background:c,border:`2px solid ${bd}`,borderRadius:p.radius??4,display:"flex",alignItems:"center",gap:8,padding:"0 12px",boxSizing:"border-box",
+        <div style={{width:"100%",height:"100%",background:c,border:`2px solid ${bd}`,borderRadius:p.radius??TH.radius??4,display:"flex",alignItems:"center",gap:8,padding:"0 12px",boxSizing:"border-box",
           boxShadow:active?`0 0 18px ${c}88, inset 0 0 12px ${c}22`:"none",
           animation:active&&p.blink!==false?"alarmBlink 0.9s ease-in-out infinite":"none",
           pointerEvents:"none",userSelect:"none"}}>
           <span style={{fontSize:p.iconSize||18,lineHeight:1,flexShrink:0}}>{icon}</span>
           <div style={{flex:1,overflow:"hidden"}}>
-            <div style={{color:fg,fontSize:p.fontSize||12,fontWeight:700,fontFamily:"monospace",whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis"}}>{p.label||"ALARM"}</div>
-            {p.subtext&&<div style={{color:active?`${fg}aa`:T.textFaint,fontSize:9,fontFamily:"monospace",whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>{p.subtext}</div>}
+            <div style={{color:fg,fontSize:p.fontSize||12,fontWeight:700,fontFamily:TH.font,whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis"}}>{p.label||"ALARM"}</div>
+            {p.subtext&&<div style={{color:active?`${fg}aa`:TH.textIdle,fontSize:9,fontFamily:TH.font,whiteSpace:"pre",overflow:"hidden",textOverflow:"ellipsis",marginTop:1}}>{p.subtext}</div>}
           </div>
           {/* Status dot */}
-          <div style={{width:8,height:8,borderRadius:"50%",background:active?"#fff":T.textFaint,flexShrink:0,boxShadow:active?"0 0 6px #fff":""}}/>
+          <div style={{width:8,height:8,borderRadius:"50%",background:active?TH.textActive:TH.textIdle,flexShrink:0,boxShadow:active?"0 0 6px #fff":""}}/>
         </div>
       );
     },
@@ -544,14 +544,14 @@ const DEFS = {
       const circ    = 2 * Math.PI * r;
       const dash    = pct * circ;
       const gap     = circ - dash;
-      const trackC  = p.trackColor  || "#1e2430";
-      const fillC   = active ? (p.colorActive || T.accent) : (p.colorIdle || "#374151");
-      const fgC     = active ? (p.colorActive || T.accent) : (p.textIdle  || T.textDim);
+      const trackC  = p.trackColor  || TH.surface;
+      const fillC   = active ? (p.colorActive || TH.accent) : (p.colorIdle || TH.border);
+      const fgC     = active ? (p.colorActive || TH.accent) : (p.textIdle  || TH.textIdle);
       const bgC     = p.bgColor || "transparent";
       const sw      = p.strokeWidth ?? 9;
       // Rotate so arc starts from top (-90deg)
       return (
-        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:bgC,borderRadius:p.radius??6,pointerEvents:"none"}}>
+        <div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",background:bgC,borderRadius:p.radius??TH.radius??6,pointerEvents:"none"}}>
           <svg width={cx*2} height={cy*2}>
             {/* Track */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke={trackC} strokeWidth={sw}/>
@@ -563,11 +563,11 @@ const DEFS = {
               style={{filter:active?`drop-shadow(0 0 5px ${fillC}88)`:"none",transition:"stroke-dasharray 0.3s"}}/>
             {/* Center value */}
             <text x={cx} y={cy+1} textAnchor="middle" dominantBaseline="middle"
-              fill={fgC} fontSize={p.fontSize||18} fontFamily="monospace" fontWeight={700} letterSpacing={1}>
+              fill={fgC} fontSize={p.fontSize||18} fontFamily={TH.font} fontWeight={700} letterSpacing={1}>
               {active ? value : "--"}
             </text>
             {/* Unit label */}
-            {p.unit && <text x={cx} y={cy+16} textAnchor="middle" fill={fgC} fontSize={9} fontFamily="monospace" opacity={0.65}>{p.unit}</text>}
+            {p.unit && <text x={cx} y={cy+16} textAnchor="middle" fill={fgC} fontSize={9} fontFamily={TH.font} opacity={0.65}>{p.unit}</text>}
             {/* Min/max dots */}
             {p.showMinMax !== false && <>
               <circle cx={cx - r} cy={cy} r={3} fill={trackC} stroke={fillC} strokeWidth={1} opacity={0.5}/>
@@ -581,12 +581,12 @@ const DEFS = {
   data_table: {
     label:"Table", icon:"≡", w:240, h:130,
     render(p, active) {
-      const bd     = active ? (p.colorActive || T.accent) : (p.borderIdle || "#374151");
-      const headBg = active ? (p.headerBg || T.accentDim) : (p.headerBg || "#0d1117");
-      const headFg = active ? (p.colorActive || T.accent) : (p.headerFg || T.textDim);
-      const rowFg  = active ? (p.rowFg || T.text) : (p.rowFg || T.textDim);
+      const bd     = active ? (p.colorActive || TH.accent) : (p.borderIdle || TH.border);
+      const headBg = active ? (p.headerBg || TH.accentDim) : (p.headerBg || TH.sunken);
+      const headFg = active ? (p.colorActive || TH.accent) : (p.headerFg || TH.textIdle);
+      const rowFg  = active ? (p.rowFg || TH.text) : (p.rowFg || TH.textIdle);
       const altBg  = p.altBg || "rgba(255,255,255,0.025)";
-      const bg2    = p.bgColor || "#0a0e14";
+      const bg2    = p.bgColor || TH.sunken;
       const fs     = p.fontSize || 11;
 
       // Parse columns and rows from props
@@ -596,12 +596,12 @@ const DEFS = {
       try { rows = JSON.parse(p.rows || '[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]'); } catch { rows = [["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]; }
 
       return (
-        <div style={{width:"100%",height:"100%",background:bg2,border:`1px solid ${bd}`,borderRadius:p.radius??4,overflow:"hidden",pointerEvents:"none",display:"flex",flexDirection:"column",
+        <div style={{width:"100%",height:"100%",background:bg2,border:`1px solid ${bd}`,borderRadius:p.radius??TH.radius??4,overflow:"hidden",pointerEvents:"none",display:"flex",flexDirection:"column",
           boxShadow: active ? `0 0 10px ${bd}33` : "none"}}>
           {/* Header row */}
           <div style={{display:"flex",background:headBg,borderBottom:`1px solid ${bd}`,flexShrink:0}}>
             {cols.map((col, ci) => (
-              <div key={ci} style={{flex:1,padding:"3px 6px",color:headFg,fontSize:fs,fontFamily:"monospace",fontWeight:700,letterSpacing:0.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+              <div key={ci} style={{flex:1,padding:"3px 6px",color:headFg,fontSize:fs,fontFamily:TH.font,fontWeight:700,letterSpacing:0.5,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
                 borderLeft: ci > 0 ? `1px solid ${bd}44` : "none"}}>
                 {col}
               </div>
@@ -612,7 +612,7 @@ const DEFS = {
             {rows.map((row, ri) => (
               <div key={ri} style={{display:"flex",background:ri%2===1?altBg:"transparent",borderBottom:`1px solid ${bd}22`}}>
                 {cols.map((_, ci) => (
-                  <div key={ci} style={{flex:1,padding:"3px 6px",color:ci===0?headFg:rowFg,fontSize:fs,fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
+                  <div key={ci} style={{flex:1,padding:"3px 6px",color:ci===0?headFg:rowFg,fontSize:fs,fontFamily:TH.font,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",
                     borderLeft: ci > 0 ? `1px solid ${bd}22` : "none",
                     fontWeight: ci===0 ? 600 : 400}}>
                     {row[ci] ?? ""}
@@ -627,24 +627,201 @@ const DEFS = {
   },
 };
 
+// ─── HMI THEME (глобальный стиль проекта) ─────────────────────────────────────
+// Компоненты берут значения по умолчанию из TH. Свойства, заданные у элемента вручную
+// (colorIdle, colorActive, radius, ...), имеют приоритет над темой.
+const THEME_FONTS = [
+  {label:"Моноширинный",  value:"monospace"},
+  {label:"Без засечек",   value:"system-ui, 'Segoe UI', Arial, sans-serif"},
+  {label:"Arial",         value:"Arial, Helvetica, sans-serif"},
+  {label:"Verdana",       value:"Verdana, Geneva, sans-serif"},
+  {label:"Tahoma",        value:"Tahoma, Geneva, sans-serif"},
+  {label:"Courier New",   value:"'Courier New', Courier, monospace"},
+  {label:"Consolas",      value:"Consolas, 'Courier New', monospace"},
+  {label:"С засечками",   value:"Georgia, 'Times New Roman', serif"},
+];
+
+// Цвет фона холста хранится отдельно (bgColor), поэтому в теме-проекте его нет.
+const DEFAULT_THEME = {
+  surface:"#1e2430", sunken:"#0a0e14", border:"#374151",
+  text:"#e6edf3", textIdle:"#8b949e", textActive:"#ffffff",
+  accent:"#f97316", ok:"#3fb950", warn:"#e3b341", alarm:"#f85149",
+  radius:null, font:"monospace",
+};
+
+const THEME_PRESETS = [
+  { id:"industrial", name:"Industrial", note:"тёмная, оранжевый акцент", bg:"#0f1117", theme:{...DEFAULT_THEME} },
+  { id:"cyan", name:"Cyan Tech", note:"тёмная, циан", bg:"#0b1220", theme:{
+      ...DEFAULT_THEME, surface:"#172033", sunken:"#0a1020", border:"#2b3a55",
+      text:"#e2e8f0", textIdle:"#94a3b8", textActive:"#04202a",
+      accent:"#22d3ee", ok:"#34d399", warn:"#fbbf24", alarm:"#f43f5e" } },
+  { id:"light", name:"Light", note:"светлая, для яркого света", bg:"#f1f5f9", theme:{
+      ...DEFAULT_THEME, surface:"#ffffff", sunken:"#e2e8f0", border:"#cbd5e1",
+      text:"#0f172a", textIdle:"#475569", textActive:"#ffffff",
+      accent:"#2563eb", ok:"#16a34a", warn:"#d97706", alarm:"#dc2626" } },
+];
+
+const THEME_COLOR_FIELDS = [
+  ["bg",         "Фон холста"],
+  ["surface",    "Заливка (Idle)"],
+  ["sunken",     "Поля, дисплеи, фон шкал"],
+  ["border",     "Рамка"],
+  ["text",       "Основной текст"],
+  ["textIdle",   "Текст Idle"],
+  ["textActive", "Текст Active"],
+  ["accent",     "Акцент (Active)"],
+  ["ok",         "OK / работа"],
+  ["warn",       "Внимание"],
+  ["alarm",      "Авария"],
+];
+
+// Свойства элемента, которые «перебивают» тему — их сбрасывает «Сбросить ручные настройки»
+const THEME_OVERRIDE_KEYS = [
+  "colorIdle","colorActive","borderIdle","textIdle","textActive","bgColor","trackColor","knobIdle",
+  "haloIdle","textColor","headerBg","headerFg","rowFg","altBg","radius","font",
+];
+
+const mixHex = (a, b, t) => {
+  const parse = h => {
+    const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(h || "");
+    if (!m) return [0, 0, 0];
+    let x = m[1];
+    if (x.length === 3) x = x.split("").map(c => c + c).join("");
+    return [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16));
+  };
+  const A = parse(a), B = parse(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+};
+
+function makeTH(theme, bg) {
+  const th = {...DEFAULT_THEME, ...theme, bg};
+  th.accentDim = mixHex(bg, th.accent, 0.45);
+  return th;
+}
+// Текущая тема; обновляется при каждом рендере редактора (см. HMIEditor), читается рендерами компонентов
+let TH = makeTH(DEFAULT_THEME, "#0f1117");
+function setActiveTheme(theme, bg) { TH = makeTH(theme, bg); }
+
+const sameTheme = (a, b) => Object.keys(DEFAULT_THEME).every(k => (a[k] ?? null) === (b[k] ?? null));
+
+function ThemeModal({theme, setTheme, bgColor, setBgColor, onResetOverrides, onClose}) {
+  const activePreset = THEME_PRESETS.find(pr => pr.bg.toLowerCase() === bgColor.toLowerCase() && sameTheme(pr.theme, theme));
+  const applyPreset = pr => { setTheme({...pr.theme}); setBgColor(pr.bg); };
+  const setToken = (key, v) => key === "bg" ? setBgColor(v) : setTheme(prev => ({...prev, [key]: v}));
+  const valueOf = key => key === "bg" ? bgColor : theme[key];
+  const fontKnown = THEME_FONTS.some(f => f.value === theme.font);
+
+  const label = {color:T.textDim, fontSize:11};
+  const sample = (type, p, active, w, h) => (
+    <div style={{width:w, height:h, position:"relative", flexShrink:0}}>{DEFS[type].render(p, active)}</div>
+  );
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}}
+      onClick={onClose}>
+      <div style={{background:T.panel,border:`2px solid ${T.accent}`,borderRadius:8,padding:24,width:560,maxWidth:"94vw",maxHeight:"92vh",overflowY:"auto"}}
+        onClick={e=>e.stopPropagation()}>
+        <div style={{color:T.accent,fontSize:15,fontWeight:700,letterSpacing:2,marginBottom:4}}>СТИЛЬ ПРОЕКТА</div>
+        <div style={{color:T.textDim,fontSize:11,marginBottom:14,lineHeight:1.5}}>
+          Цвета, радиус и шрифт по умолчанию для всех компонентов. Значения, заданные у самого элемента вручную, имеют приоритет.
+        </div>
+
+        <div style={{...label,marginBottom:6}}>ГОТОВЫЕ СХЕМЫ</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:16}}>
+          {THEME_PRESETS.map(pr => {
+            const on = activePreset?.id === pr.id;
+            return (
+              <div key={pr.id} onClick={()=>applyPreset(pr)}
+                style={{padding:8,borderRadius:5,cursor:"pointer",background:on?T.accentBg:T.bg,border:`1px solid ${on?T.accent:T.border}`}}>
+                <div style={{display:"flex",height:22,borderRadius:3,overflow:"hidden",marginBottom:6,border:`1px solid ${T.border}`}}>
+                  {[pr.bg, pr.theme.surface, pr.theme.accent, pr.theme.ok, pr.theme.warn, pr.theme.alarm].map((c,i)=>(
+                    <div key={i} style={{flex:1,background:c}}/>
+                  ))}
+                </div>
+                <div style={{color:on?T.accent:T.text,fontSize:12,fontWeight:700}}>{pr.name}</div>
+                <div style={{color:T.textDim,fontSize:10}}>{pr.note}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{...label,marginBottom:6}}>ЦВЕТА {!activePreset && <span style={{color:T.yellow}}>· свои настройки</span>}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px",marginBottom:16}}>
+          {THEME_COLOR_FIELDS.map(([key, name]) => (
+            <div key={key} style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{...label,flex:1,minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</div>
+              <input type="color" value={valueOf(key)} onChange={e=>setToken(key, e.target.value)}
+                style={{width:36,height:24,border:`1px solid ${T.border}`,borderRadius:3,cursor:"pointer",background:"none",padding:1}}/>
+            </div>
+          ))}
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:16}}>
+          <div>
+            <div style={{...label,marginBottom:4}}>ШРИФТ</div>
+            <select value={theme.font} onChange={e=>setToken("font", e.target.value)}
+              style={{width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"6px 8px",fontSize:12,borderRadius:3}}>
+              {!fontKnown && <option value={theme.font}>Свой: {theme.font}</option>}
+              {THEME_FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{...label,marginBottom:4}}>РАДИУС СКРУГЛЕНИЯ (px)</div>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <NumInput integer min={0} max={50} value={theme.radius} onCommit={v=>setToken("radius", v)} placeholder="по умолч."
+                style={{flex:1,minWidth:0,background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"6px 8px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
+              <div onClick={()=>setToken("radius", null)} title="У каждого компонента свой радиус по умолчанию"
+                style={{color:theme.radius==null?T.textFaint:T.textDim,cursor:"pointer",fontSize:11,whiteSpace:"nowrap"}}>✕ по умолч.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{...label,marginBottom:6}}>ПРЕДПРОСМОТР</div>
+        <div style={{background:bgColor,border:`1px solid ${T.border}`,borderRadius:5,padding:14,marginBottom:16,
+          display:"flex",flexWrap:"wrap",alignItems:"center",gap:12}}>
+          {sample("button_rect", {label:"START"}, false, 96, 40)}
+          {sample("button_rect", {label:"STOP"}, true, 96, 40)}
+          {sample("toggle_switch", {}, true, 70, 36)}
+          {sample("indicator_led", {}, true, 36, 36)}
+          {sample("indicator_bar", {value:70}, true, 120, 28)}
+          {sample("display_num", {value:"42.5"}, true, 90, 40)}
+          {sample("label_text", {text:"Label"}, false, 60, 24)}
+          {sample("alarm_indicator", {label:"ALARM", subtext:"Fault 04"}, true, 150, 44)}
+        </div>
+
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={onResetOverrides}
+            title="Удалить у всех элементов вручную заданные цвета, радиус и шрифт — они начнут следовать теме"
+            style={{padding:"8px 12px",background:"transparent",border:`1px solid ${T.border}`,color:T.textDim,fontSize:11,cursor:"pointer",borderRadius:4}}>
+            Сбросить ручные настройки у всех элементов
+          </button>
+          <div style={{flex:1}}/>
+          <button onClick={onClose}
+            style={{padding:"8px 18px",background:T.accent,border:"none",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",borderRadius:4}}>Готово</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── EXPORT HELPERS ───────────────────────────────────────────────────────────
 function elToHTML(el, active) {
   // Render element as inline HTML string for canvas export
   const p = el.props||{};
   const W = el.w, H = el.h;
   switch(el.type) {
-    case "button_rect": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:${p.radius??6}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign)};text-align:${p.textAlign||"center"};white-space:pre-line;padding:${p.textAlign==="left"||p.textAlign==="right"?"0 10px":"0"};color:${fg};font-size:${p.fontSize||13}px;font-weight:600;font-family:monospace;box-sizing:border-box;">${p.label||"BUTTON"}</div>`; }
-    case "button_round": { const bg=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.textActive||"#fff"):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;color:${fg};font-size:${p.fontSize||11}px;font-weight:700;font-family:monospace;box-sizing:border-box;">${p.label||"OK"}</div>`; }
-    case "toggle_switch": { const tr=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:54px;height:28px;background:${tr};border:2px solid ${bd};border-radius:14px;position:relative;box-sizing:border-box;"><div style="position:absolute;top:3px;left:${active?27:3}px;width:18px;height:18px;border-radius:50%;background:${active?"#fff":(p.knobIdle||"#555")};"></div></div></div>`; }
-    case "indicator_led": { const c=active?(p.colorActive||T.green):(p.colorIdle||"#1e2430"),bd=active?(p.colorActive||T.green):(p.borderIdle||"#374151"),sz=p.size||28; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:2px solid ${bd};"></div></div>`; }
-    case "indicator_bar": { const fill=active?(p.colorActive||T.accent):(p.colorIdle||"#1e2430"),pct=active?(p.value||70):15; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||"#0a0e14"};border:1px solid ${p.borderIdle||"#374151"};border-radius:${p.radius??4}px;overflow:hidden;position:relative;box-sizing:border-box;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${fill};"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${p.textColor||T.text};font-size:11px;font-family:monospace;">${active?`${pct}%`:"0%"}</div></div>`; }
-    case "slider_h": { const pct=active?(p.value||60):0,c=p.colorActive||T.accent; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;"><div style="flex:1;height:4px;background:${p.trackColor||"#1e2430"};border-radius:2px;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c};border-radius:2px;"></div></div></div>`; }
-    case "display_num": { const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),fg=active?(p.colorActive||T.accent):(p.textIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||"#0a0e14"};border:1px solid ${bd};border-radius:${p.radius??4}px;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||22}px;font-family:monospace;font-weight:700;letter-spacing:2px;box-sizing:border-box;">${active?(p.value||"42.5"):"--.-"}</div>`; }
-    case "label_text": { const fg=active?(p.colorActive||T.accent):(p.colorIdle||T.textDim); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign||"left")};text-align:${p.textAlign||"left"};white-space:pre-line;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||"monospace"};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
-    case "frame_box": { const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;border:${p.borderWidth||2}px solid ${bd};border-radius:${p.radius??6}px;position:relative;background:${p.bgColor||"rgba(255,255,255,0.015)"};box-sizing:border-box;">${p.title?`<div style="position:absolute;top:-8px;left:12px;background:#161b22;padding:0 6px;color:${active?(p.colorActive||T.accent):(p.colorIdle||T.textDim)};font-size:${p.fontSize||11}px;font-family:monospace;">${p.title}</div>`:""}</div>`; }
-    case "separator": { const c=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;"><div style="width:100%;height:${p.thickness||2}px;background:${c};border-radius:1px;"></div></div>`; }
-    case "gauge": { const value=active?(p.value??75):(p.idleValue??20),minVal=p.minVal??0,maxVal=p.maxVal??100,pct=Math.max(0,Math.min(1,(value-minVal)/(maxVal-minVal))),r=48,cx=70,cy=74,startDeg=220,sweepDeg=280,toRad=d=>(d-90)*Math.PI/180,arcPath=(from,to,radius)=>{const s=toRad(from),e=toRad(to),large=(to-from)>180?1:0;return `M ${cx+radius*Math.cos(s)} ${cy+radius*Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx+radius*Math.cos(e)} ${cy+radius*Math.sin(e)}`;},endAngle=startDeg+sweepDeg*pct,nRad=toRad(endAngle),nx=cx+(r-8)*Math.cos(nRad),ny=cy+(r-8)*Math.sin(nRad),fc=active?(p.colorActive||T.accent):(p.colorIdle||"#374151"),fg=active?(p.colorActive||T.accent):(p.textIdle||T.textDim),sw=p.strokeWidth||8; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><svg width="${cx*2}" height="${cy*2}" overflow="visible"><path d="${arcPath(startDeg,startDeg+sweepDeg,r)}" fill="none" stroke="${p.trackColor||'#1e2430'}" stroke-width="${sw}" stroke-linecap="round"/>${pct>0?`<path d="${arcPath(startDeg,endAngle,r)}" fill="none" stroke="${fc}" stroke-width="${sw}" stroke-linecap="round"/>`:""}<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="${fc}" stroke="${p.trackColor||'#1e2430'}" stroke-width="2"/><text x="${cx}" y="${cy+22}" text-anchor="middle" fill="${fg}" font-size="${p.fontSize||14}" font-family="monospace" font-weight="700">${active?value:"--"}</text>${p.unit?`<text x="${cx}" y="${cy+36}" text-anchor="middle" fill="${fg}" font-size="9" font-family="monospace" opacity="0.7">${p.unit}</text>`:""}</svg></div>`; }
-    case "data_table": { let cols=[]; try{cols=JSON.parse(p.columns||'["Name","Value","Unit"]');}catch{cols=["Name","Value","Unit"];} let rows=[]; try{rows=JSON.parse(p.rows||'[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]');}catch{rows=[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]];} const bd=active?(p.colorActive||T.accent):(p.borderIdle||"#374151"),hBg=p.headerBg||(active?T.accentDim:"#0d1117"),hFg=active?(p.colorActive||T.accent):(p.headerFg||T.textDim),rFg=p.rowFg||(active?T.text:T.textDim),fs=p.fontSize||11; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||'#0a0e14'};border:1px solid ${bd};border-radius:${p.radius??4}px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;font-family:monospace;"><div style="display:flex;background:${hBg};border-bottom:1px solid ${bd};">${cols.map(c=>`<div style="flex:1;padding:3px 6px;color:${hFg};font-size:${fs}px;font-weight:700;overflow:hidden;white-space:nowrap;">${c}</div>`).join("")}</div><div style="flex:1;overflow:hidden;">${rows.map((row,ri)=>`<div style="display:flex;background:${ri%2===1?(p.altBg||"rgba(255,255,255,0.025)"):"transparent"};border-bottom:1px solid ${bd}22;">${cols.map((_,ci)=>`<div style="flex:1;padding:3px 6px;color:${ci===0?hFg:rFg};font-size:${fs}px;overflow:hidden;white-space:nowrap;font-weight:${ci===0?600:400};">${row[ci]??""}</div>`).join("")}</div>`).join("")}</div></div>`; }
+    case "button_rect": { const bg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.textActive||TH.textActive):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:${p.radius??TH.radius??6}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign)};text-align:${p.textAlign||"center"};white-space:pre-line;padding:${p.textAlign==="left"||p.textAlign==="right"?"0 10px":"0"};color:${fg};font-size:${p.fontSize||13}px;font-weight:600;font-family:${TH.font};box-sizing:border-box;">${p.label||"BUTTON"}</div>`; }
+    case "button_round": { const bg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.textActive||TH.textActive):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;color:${fg};font-size:${p.fontSize||11}px;font-weight:700;font-family:${TH.font};box-sizing:border-box;">${p.label||"OK"}</div>`; }
+    case "toggle_switch": { const tr=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:54px;height:28px;background:${tr};border:2px solid ${bd};border-radius:14px;position:relative;box-sizing:border-box;"><div style="position:absolute;top:3px;left:${active?27:3}px;width:18px;height:18px;border-radius:50%;background:${active?TH.textActive:(p.knobIdle||TH.textIdle)};"></div></div></div>`; }
+    case "indicator_led": { const c=active?(p.colorActive||TH.ok):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.ok):(p.borderIdle||TH.border),sz=p.size||28; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:2px solid ${bd};"></div></div>`; }
+    case "indicator_bar": { const fill=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),pct=active?(p.value||70):15; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${p.borderIdle||TH.border};border-radius:${p.radius??TH.radius??4}px;overflow:hidden;position:relative;box-sizing:border-box;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${fill};"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${p.textColor||TH.text};font-size:11px;font-family:${TH.font};">${active?`${pct}%`:"0%"}</div></div>`; }
+    case "slider_h": { const pct=active?(p.value||60):0,c=p.colorActive||TH.accent; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;"><div style="flex:1;height:4px;background:${p.trackColor||TH.surface};border-radius:2px;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c};border-radius:2px;"></div></div></div>`; }
+    case "display_num": { const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.colorActive||TH.accent):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${bd};border-radius:${p.radius??TH.radius??4}px;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||22}px;font-family:${TH.font};font-weight:700;letter-spacing:2px;box-sizing:border-box;">${active?(p.value||"42.5"):"--.-"}</div>`; }
+    case "label_text": { const fg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign||"left")};text-align:${p.textAlign||"left"};white-space:pre-line;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||TH.font};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
+    case "frame_box": { const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border); return `<div style="width:${W}px;height:${H}px;border:${p.borderWidth||2}px solid ${bd};border-radius:${p.radius??TH.radius??6}px;position:relative;background:${p.bgColor||"rgba(255,255,255,0.015)"};box-sizing:border-box;">${p.title?`<div style="position:absolute;top:-8px;left:12px;background:${TH.bg};padding:0 6px;color:${active?(p.colorActive||TH.accent):(p.colorIdle||TH.textIdle)};font-size:${p.fontSize||11}px;font-family:${TH.font};">${p.title}</div>`:""}</div>`; }
+    case "separator": { const c=active?(p.colorActive||TH.accent):(p.colorIdle||TH.border); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;"><div style="width:100%;height:${p.thickness||2}px;background:${c};border-radius:1px;"></div></div>`; }
+    case "gauge": { const value=active?(p.value??75):(p.idleValue??20),minVal=p.minVal??0,maxVal=p.maxVal??100,pct=Math.max(0,Math.min(1,(value-minVal)/(maxVal-minVal))),r=48,cx=70,cy=74,startDeg=220,sweepDeg=280,toRad=d=>(d-90)*Math.PI/180,arcPath=(from,to,radius)=>{const s=toRad(from),e=toRad(to),large=(to-from)>180?1:0;return `M ${cx+radius*Math.cos(s)} ${cy+radius*Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx+radius*Math.cos(e)} ${cy+radius*Math.sin(e)}`;},endAngle=startDeg+sweepDeg*pct,nRad=toRad(endAngle),nx=cx+(r-8)*Math.cos(nRad),ny=cy+(r-8)*Math.sin(nRad),fc=active?(p.colorActive||TH.accent):(p.colorIdle||TH.border),fg=active?(p.colorActive||TH.accent):(p.textIdle||TH.textIdle),sw=p.strokeWidth||8; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><svg width="${cx*2}" height="${cy*2}" overflow="visible"><path d="${arcPath(startDeg,startDeg+sweepDeg,r)}" fill="none" stroke="${p.trackColor||TH.surface}" stroke-width="${sw}" stroke-linecap="round"/>${pct>0?`<path d="${arcPath(startDeg,endAngle,r)}" fill="none" stroke="${fc}" stroke-width="${sw}" stroke-linecap="round"/>`:""}<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="${fc}" stroke="${p.trackColor||TH.surface}" stroke-width="2"/><text x="${cx}" y="${cy+22}" text-anchor="middle" fill="${fg}" font-size="${p.fontSize||14}" font-family="${TH.font}" font-weight="700">${active?value:"--"}</text>${p.unit?`<text x="${cx}" y="${cy+36}" text-anchor="middle" fill="${fg}" font-size="9" font-family="${TH.font}" opacity="0.7">${p.unit}</text>`:""}</svg></div>`; }
+    case "data_table": { let cols=[]; try{cols=JSON.parse(p.columns||'["Name","Value","Unit"]');}catch{cols=["Name","Value","Unit"];} let rows=[]; try{rows=JSON.parse(p.rows||'[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]');}catch{rows=[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]];} const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),hBg=p.headerBg||(active?TH.accentDim:TH.sunken),hFg=active?(p.colorActive||TH.accent):(p.headerFg||TH.textIdle),rFg=p.rowFg||(active?TH.text:TH.textIdle),fs=p.fontSize||11; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${bd};border-radius:${p.radius??TH.radius??4}px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;font-family:${TH.font};"><div style="display:flex;background:${hBg};border-bottom:1px solid ${bd};">${cols.map(c=>`<div style="flex:1;padding:3px 6px;color:${hFg};font-size:${fs}px;font-weight:700;overflow:hidden;white-space:nowrap;">${c}</div>`).join("")}</div><div style="flex:1;overflow:hidden;">${rows.map((row,ri)=>`<div style="display:flex;background:${ri%2===1?(p.altBg||"rgba(255,255,255,0.025)"):"transparent"};border-bottom:1px solid ${bd}22;">${cols.map((_,ci)=>`<div style="flex:1;padding:3px 6px;color:${ci===0?hFg:rFg};font-size:${fs}px;overflow:hidden;white-space:nowrap;font-weight:${ci===0?600:400};">${row[ci]??""}</div>`).join("")}</div>`).join("")}</div></div>`; }
     default: return `<div style="width:${W}px;height:${H}px;background:#333;border-radius:4px;"></div>`;
   }
 }
@@ -1043,6 +1220,9 @@ export default function HMIEditor() {
   const [customW, setCustomW] = useState(800);
   const [customH, setCustomH] = useState(480);
   const [bgColor, setBgColor] = useState("#0f1117");
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [showTheme, setShowTheme] = useState(false);
+  setActiveTheme(theme, bgColor); // компоненты читают актуальную тему при рендере
   const [bgImage, setBgImage] = useState(null);
   const bgFileInputRef = useRef(null);
   const importJsonRef = useRef(null);
@@ -1765,6 +1945,19 @@ export default function HMIEditor() {
 
   const clearBgImage = () => setBgImage(null);
 
+  const stripOverrides = el => {
+    if (!el.props) return el;
+    const props = {...el.props};
+    THEME_OVERRIDE_KEYS.forEach(k => { delete props[k]; });
+    return {...el, props};
+  };
+  const resetOverrides = () => {
+    if (!window.confirm("Сбросить вручную заданные цвета, радиус и шрифт у ВСЕХ элементов проекта? Они начнут следовать теме.")) return;
+    setElements(prev => prev.map(stripOverrides));
+    setSharedElements(prev => prev.map(stripOverrides));
+    setPages(prev => prev.map(pg => ({...pg, elements: (pg.elements || []).map(stripOverrides)})));
+  };
+
   // ── Project serialization ──
   const getProjectSnapshot = () => {
     const currentAllPages = pages.map(p => p.id === activePageId ? {...p, elements} : p);
@@ -1774,6 +1967,7 @@ export default function HMIEditor() {
       customW,
       customH,
       bgColor,
+      theme,
       bgImage,
       pages: currentAllPages,
       sharedElements,
@@ -1788,20 +1982,27 @@ export default function HMIEditor() {
     setCustomW(data.customW ?? 800);
     setCustomH(data.customH ?? 480);
     setBgColor(data.bgColor ?? "#0f1117");
+    setTheme({...DEFAULT_THEME, ...(data.theme || {})});
     setBgImage(data.bgImage ?? null);
     const loadedPages = data.pages || [{id:"p1",name:"Page 1",elements:[]}];
     setPages(loadedPages);
     setSharedElements(data.sharedElements || []);
     const pid = data.activePageId || loadedPages[0]?.id;
     setActivePageId(pid);
+    // Если активная страница не сменилась, эффект переключения страницы не сработает — подставляем элементы сами
+    setElements(loadedPages.find(pg => pg.id === pid)?.elements || []);
     // Update _id counter to avoid ID collisions
     const allIds = [...(data.sharedElements||[]), ...loadedPages.flatMap(p=>p.elements||[])].map(e=>parseInt(e.id?.replace("el_","")||0)).filter(Boolean);
     if (allIds.length) _id = Math.max(...allIds) + 1;
     return true;
   };
 
+  // Автосохранение ждёт завершения загрузки, иначе пустое начальное состояние затирает сохранённый проект
+  const [hydrated, setHydrated] = useState(false);
+
   // Autosave to localStorage
   useEffect(() => {
+    if (!hydrated) return;
     const snap = getProjectSnapshot();
     try {
       localStorage.setItem("hmi_editor_project", JSON.stringify(snap));
@@ -1810,7 +2011,7 @@ export default function HMIEditor() {
       return () => clearTimeout(t);
     } catch { setSaveStatus("error"); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolution, customW, customH, bgColor, bgImage, pages, sharedElements, activePageId, elements]);
+  }, [hydrated, resolution, customW, customH, bgColor, theme, bgImage, pages, sharedElements, activePageId, elements]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -1818,6 +2019,7 @@ export default function HMIEditor() {
       const raw = localStorage.getItem("hmi_editor_project");
       if (raw) applyProjectSnapshot(JSON.parse(raw));
     } catch {}
+    setHydrated(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2224,87 +2426,87 @@ export default function HMIEditor() {
             {/* Color fields per type */}
             {(selectedEl.type==="button_rect"||selectedEl.type==="button_round"||selectedEl.type==="toggle_switch") && <>
               <div style={{color:T.textDim,fontSize:11,marginBottom:5,letterSpacing:1}}>ФОН</div>
-              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
               <div style={{color:T.textDim,fontSize:11,marginBottom:5,marginTop:10,letterSpacing:1}}>ТЕКСТ</div>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal={TH.textActive}/>
               <div style={{color:T.textDim,fontSize:11,marginBottom:5,marginTop:10,letterSpacing:1}}>РАМКА</div>
-              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="indicator_led" && <>
-              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.green}/>
-              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.ok}/>
+              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {(selectedEl.type==="indicator_bar") && <>
-              <ColorRow label="Idle заливка" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Active заливка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Фон полосы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="#0a0e14"/>
-              <ColorRow label="Цвет текста" propKey="textColor" value={p.textColor} onChange={up} defaultVal={T.text}/>
-              <ColorRow label="Рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle заливка" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Active заливка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Фон полосы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal={TH.sunken}/>
+              <ColorRow label="Цвет текста" propKey="textColor" value={p.textColor} onChange={up} defaultVal={TH.text}/>
+              <ColorRow label="Рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="slider_h" && <>
-              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Трек" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Idle ползунок" propKey="knobIdle" value={p.knobIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Трек" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Idle ползунок" propKey="knobIdle" value={p.knobIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="label_text" && <>
-              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
             </>}
             {selectedEl.type==="frame_box" && <>
-              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
-              <ColorRow label="Active рамка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
+              <ColorRow label="Active рамка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
               <ColorRow label="Фон" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="transparent"/>
-              <ColorRow label="Цвет текста idle" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Цвет текста idle" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.textIdle}/>
             </>}
             {selectedEl.type==="separator" && <>
-              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
-              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
+              <ColorRow label="Idle цвет" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.border}/>
+              <ColorRow label="Active цвет" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
             </>}
             {selectedEl.type==="gauge" && <>
-              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
-              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Трек (фон дуги)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.border}/>
+              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Трек (фон дуги)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
               <ColorRow label="Фон" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="transparent"/>
             </>}
             {selectedEl.type==="data_table" && <>
-              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
-              <ColorRow label="Active рамка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Фон шапки" propKey="headerBg" value={p.headerBg} onChange={up} defaultVal="#0d1117"/>
-              <ColorRow label="Цвет шапки" propKey="headerFg" value={p.headerFg} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Цвет строк" propKey="rowFg" value={p.rowFg} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Idle рамка" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
+              <ColorRow label="Active рамка" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Фон шапки" propKey="headerBg" value={p.headerBg} onChange={up} defaultVal={TH.sunken}/>
+              <ColorRow label="Цвет шапки" propKey="headerFg" value={p.headerFg} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Цвет строк" propKey="rowFg" value={p.rowFg} onChange={up} defaultVal={TH.textIdle}/>
               <ColorRow label="Чередование строк" propKey="altBg" value={p.altBg} onChange={up} defaultVal="rgba(255,255,255,0.025)"/>
-              <ColorRow label="Фон таблицы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="#0a0e14"/>
+              <ColorRow label="Фон таблицы" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal={TH.sunken}/>
             </>}
             {selectedEl.type==="toggle_2pos" && <>
-              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
-              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal={TH.textActive}/>
+              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="button_halo" && <>
-              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#0d1117"/>
-              <ColorRow label="Active фон/обод" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
-              <ColorRow label="Idle обод" propKey="haloIdle" value={p.haloIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.sunken}/>
+              <ColorRow label="Active фон/обод" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal={TH.textActive}/>
+              <ColorRow label="Idle обод" propKey="haloIdle" value={p.haloIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="alarm_indicator" && <>
-              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.red}/>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
-              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal="#ffffff"/>
-              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal="#374151"/>
+              <ColorRow label="Idle фон" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Active фон" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.alarm}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
+              <ColorRow label="Active текст" propKey="textActive" value={p.textActive} onChange={up} defaultVal={TH.textActive}/>
+              <ColorRow label="Рамка idle" propKey="borderIdle" value={p.borderIdle} onChange={up} defaultVal={TH.border}/>
             </>}
             {selectedEl.type==="ring_progress" && <>
-              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal="#374151"/>
-              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={T.accent}/>
-              <ColorRow label="Трек (фон кольца)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal="#1e2430"/>
-              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={T.textDim}/>
+              <ColorRow label="Idle дуга" propKey="colorIdle" value={p.colorIdle} onChange={up} defaultVal={TH.border}/>
+              <ColorRow label="Active дуга" propKey="colorActive" value={p.colorActive} onChange={up} defaultVal={TH.accent}/>
+              <ColorRow label="Трек (фон кольца)" propKey="trackColor" value={p.trackColor} onChange={up} defaultVal={TH.surface}/>
+              <ColorRow label="Idle текст" propKey="textIdle" value={p.textIdle} onChange={up} defaultVal={TH.textIdle}/>
               <ColorRow label="Фон" propKey="bgColor" value={p.bgColor} onChange={up} defaultVal="transparent"/>
             </>}
           </div>
@@ -2394,6 +2596,21 @@ export default function HMIEditor() {
           <div style={{color:T.textDim,fontSize:11,flex:1}}>ФОН КАНВАСА</div>
           <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}
             style={{width:36,height:26,border:`1px solid ${T.border}`,borderRadius:3,cursor:"pointer",padding:1,background:"none"}}/>
+        </div>
+
+        {/* Project theme */}
+        <div style={{padding:"9px 10px",borderBottom:`1px solid ${T.border}`}}>
+          <div style={{color:T.textDim,fontSize:11,letterSpacing:1,marginBottom:4}}>СТИЛЬ ПРОЕКТА</div>
+          <div onClick={()=>setShowTheme(true)}
+            style={{padding:"6px 10px",background:"#0a0e14",border:`1px solid ${T.border}`,borderRadius:4,cursor:"pointer",fontSize:12,color:T.text,display:"flex",alignItems:"center",gap:8}}>
+            <div style={{display:"flex",height:14,width:44,borderRadius:2,overflow:"hidden",border:`1px solid ${T.border}`,flexShrink:0}}>
+              {[TH.bg, TH.surface, TH.accent, TH.ok, TH.warn, TH.alarm].map((c,i)=><div key={i} style={{flex:1,background:c}}/>)}
+            </div>
+            <span style={{flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+              {THEME_PRESETS.find(pr=>pr.bg.toLowerCase()===bgColor.toLowerCase()&&sameTheme(pr.theme,theme))?.name || "Свой стиль"}
+            </span>
+            <span style={{fontSize:11,color:T.textDim}}>▸</span>
+          </div>
         </div>
 
         {/* Background image */}
@@ -2960,6 +3177,11 @@ export default function HMIEditor() {
       </div>
 
       {/* ══ RESOLUTION MODAL ══ */}
+      {showTheme&&(
+        <ThemeModal theme={theme} setTheme={setTheme} bgColor={bgColor} setBgColor={setBgColor}
+          onResetOverrides={resetOverrides} onClose={()=>setShowTheme(false)}/>
+      )}
+
       {showResModal&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}}
           onClick={()=>setShowResModal(false)}>
