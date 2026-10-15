@@ -702,6 +702,103 @@ function ColorRow({label, propKey, value, onChange, defaultVal}) {
   );
 }
 
+// ─── COORD FIELD (числа и выражения как в CAD: 1024-8, w/2, cw-w-8) ───────────
+function evalExpr(src, vars = {}) {
+  const s = String(src).toLowerCase().replace(/,/g, ".").replace(/\s+/g, "");
+  if (!s) return null;
+  let i = 0;
+  const peek = () => s[i];
+  const num = () => {
+    const m = /^(\d+\.?\d*|\.\d+)/.exec(s.slice(i));
+    if (!m) return null;
+    i += m[0].length;
+    return parseFloat(m[0]);
+  };
+  const primary = () => {
+    if (peek() === "(") {
+      i++;
+      const v = expr();
+      if (v === null || peek() !== ")") return null;
+      i++;
+      return v;
+    }
+    const id = /^[a-z]+/.exec(s.slice(i));
+    if (id) {
+      i += id[0].length;
+      return Object.prototype.hasOwnProperty.call(vars, id[0]) ? vars[id[0]] : null;
+    }
+    return num();
+  };
+  const unary = () => {
+    if (peek() === "-") { i++; const v = unary(); return v === null ? null : -v; }
+    if (peek() === "+") { i++; return unary(); }
+    return primary();
+  };
+  const term = () => {
+    let v = unary();
+    while (v !== null && (peek() === "*" || peek() === "/" || peek() === "%")) {
+      const op = s[i++];
+      const r = unary();
+      if (r === null) return null;
+      v = op === "*" ? v * r : op === "/" ? v / r : v % r;
+    }
+    return v;
+  };
+  const expr = () => {
+    let v = term();
+    while (v !== null && (peek() === "+" || peek() === "-")) {
+      const op = s[i++];
+      const r = term();
+      if (r === null) return null;
+      v = op === "+" ? v + r : v - r;
+    }
+    return v;
+  };
+  const result = expr();
+  return result !== null && i === s.length && Number.isFinite(result) ? result : null;
+}
+
+function CoordField({label, value, onCommit, vars}) {
+  const [text, setText] = useState(String(value));
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (!editing) setText(String(value)); }, [value, editing]);
+
+  const parsed = evalExpr(text, vars);
+  const invalid = editing && text.trim() !== "" && parsed === null;
+
+  const commit = (raw = text) => {
+    const v = evalExpr(raw, vars);
+    if (v === null) { setText(String(value)); return; }
+    const r = Math.round(v);
+    setText(String(r));
+    if (r !== value) onCommit(r);
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === "Enter") { commit(); e.currentTarget.select(); }
+    else if (e.key === "Escape") { setText(String(value)); e.currentTarget.blur(); }
+    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const base = evalExpr(text, vars) ?? value;
+      const step = (e.shiftKey ? GRID : 1) * (e.key === "ArrowUp" ? 1 : -1);
+      commit(String(Math.round(base) + step));
+    }
+  };
+
+  return (
+    <div>
+      <div style={{color:T.textDim,fontSize:11,marginBottom:3}}>{label}</div>
+      <input type="text" inputMode="decimal" spellCheck={false} autoComplete="off"
+        value={text} title="Число или выражение: 1024-8, w/2, cw-w-8. Enter — применить, Esc — отмена, ↑↓ — ±1 (Shift — ±шаг сетки)"
+        onFocus={e=>{setEditing(true); e.target.select();}}
+        onBlur={()=>{commit(); setEditing(false);}}
+        onChange={e=>setText(e.target.value)}
+        onKeyDown={onKeyDown}
+        style={{width:"100%",background:T.bg,border:`1px solid ${invalid?T.red||"#ef4444":T.border}`,color:T.green,padding:"5px 6px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
+    </div>
+  );
+}
+
 // ─── PROP FIELD ───────────────────────────────────────────────────────────────
 function PropField({label, value, onChange, type="text", min, max, placeholder}) {
   return (
@@ -1902,12 +1999,9 @@ export default function HMIEditor() {
         {/* Position & Size */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:7,marginBottom:10}}>
           {[{l:"X",k:"x"},{l:"Y",k:"y"},{l:"W",k:"w"},{l:"H",k:"h"}].map(f=>(
-            <div key={f.k}>
-              <div style={{color:T.textDim,fontSize:11,marginBottom:3}}>{f.l}</div>
-              <input type="number" value={selectedEl[f.k]}
-                onChange={e=>{const v=snap(parseInt(e.target.value)||0); const sel=selectedRef.current; if(selectedIsSharedRef.current) setSharedElements(prev=>prev.map(el=>el.id===sel?{...el,[f.k]:v}:el)); else setElements(prev=>prev.map(el=>el.id===sel?{...el,[f.k]:v}:el));}}
-                style={{width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.green,padding:"5px 6px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
-            </div>
+            <CoordField key={selectedEl.id+f.k} label={f.l} value={selectedEl[f.k]}
+              vars={{x:selectedEl.x,y:selectedEl.y,w:selectedEl.w,h:selectedEl.h,cw:cW,ch:cH}}
+              onCommit={v=>{const sel=selectedRef.current; if(selectedIsSharedRef.current) setSharedElements(prev=>prev.map(el=>el.id===sel?{...el,[f.k]:v}:el)); else setElements(prev=>prev.map(el=>el.id===sel?{...el,[f.k]:v}:el));}}/>
           ))}
         </div>
 
