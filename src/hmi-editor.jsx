@@ -2739,7 +2739,7 @@ export default function HMIEditor() {
           <div style={{color:T.textDim,fontSize:11,letterSpacing:1}}>СВОЙСТВА</div>
         </div>
         <div style={{flex:1,overflowY:"auto"}}>
-          <PropsPanel/>
+          {PropsPanel()}
         </div>
 
         {/* ── Layer list ── */}
