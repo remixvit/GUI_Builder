@@ -704,10 +704,10 @@ function setActiveTheme(theme, bg) { TH = makeTH(theme, bg); }
 
 const sameTheme = (a, b) => Object.keys(DEFAULT_THEME).every(k => (a[k] ?? null) === (b[k] ?? null));
 
-function ThemeModal({theme, setTheme, bgColor, setBgColor, onResetOverrides, onClose}) {
+function ThemeModal({theme, bgColor, onChange, onResetOverrides, onClose}) {
   const activePreset = THEME_PRESETS.find(pr => pr.bg.toLowerCase() === bgColor.toLowerCase() && sameTheme(pr.theme, theme));
-  const applyPreset = pr => { setTheme({...pr.theme}); setBgColor(pr.bg); };
-  const setToken = (key, v) => key === "bg" ? setBgColor(v) : setTheme(prev => ({...prev, [key]: v}));
+  const applyPreset = pr => onChange({...pr.theme}, pr.bg);
+  const setToken = (key, v) => key === "bg" ? onChange(theme, v) : onChange({...theme, [key]: v}, bgColor);
   const valueOf = key => key === "bg" ? bgColor : theme[key];
   const fontKnown = THEME_FONTS.some(f => f.value === theme.font);
 
@@ -1447,50 +1447,57 @@ export default function HMIEditor() {
   }, []);
 
   // ── History (must be declared before any callback that uses it) ──
-  const historyIndexRef = useRef(0);
-  useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
+
+  // Тема и фон холста входят в снимки истории, чтобы Ctrl+Z отменял и смену стиля
+  const lookRef = useRef({theme: DEFAULT_THEME, bgColor: "#0f1117"});
+  const lookTimer = useRef(null);
+  useEffect(() => { lookRef.current = {theme, bgColor}; }, [theme, bgColor]);
+
+  // Источник правды по истории — historyRef (синхронно обновляется); history/historyIndex — только для отображения
+  const historyRef = useRef({
+    entries: [{elements:[], sharedElements:[], look:{theme:DEFAULT_THEME, bgColor:"#0f1117"}}],
+    index: 0,
+  });
+  const cloneEls = list => list.map(e => ({...e, props: {...e.props}}));
 
   const pushHistory = useCallback((els, shared) => {
     if (isUndoRedoRef.current) return;
-    setHistory(prev => {
-      const trimmed = prev.slice(0, historyIndexRef.current + 1);
-      const next = [...trimmed, { elements: els.map(e=>({...e,props:{...e.props}})), sharedElements: shared.map(e=>({...e,props:{...e.props}})) }];
-      return next.slice(-MAX_HISTORY);
-    });
-    setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1));
+    const h = historyRef.current;
+    const snap = {
+      elements: cloneEls(els),
+      sharedElements: cloneEls(shared),
+      look: {theme: {...lookRef.current.theme}, bgColor: lookRef.current.bgColor},
+    };
+    // Одно и то же состояние дважды подряд не записываем
+    if (JSON.stringify(snap) === JSON.stringify(h.entries[h.index])) return;
+    const entries = [...h.entries.slice(0, h.index + 1), snap].slice(-MAX_HISTORY);
+    historyRef.current = {entries, index: entries.length - 1};
+    setHistory(entries);
+    setHistoryIndex(entries.length - 1);
   }, []);
 
-  const undo = useCallback(() => {
-    if (historyIndexRef.current <= 0) return;
-    const newIdx = historyIndexRef.current - 1;
-    setHistoryIndex(newIdx);
+  const restoreHistory = useCallback((newIdx) => {
+    const h = historyRef.current;
+    const snap = h.entries[newIdx];
+    if (!snap) return;
+    historyRef.current = {entries: h.entries, index: newIdx};
     isUndoRedoRef.current = true;
-    setHistory(h => {
-      const snap = h[newIdx];
-      if (snap) {
-        setElements(snap.elements.map(e=>({...e,props:{...e.props}})));
-        setSharedElements(snap.sharedElements.map(e=>({...e,props:{...e.props}})));
-      }
-      return h;
-    });
+    clearTimeout(lookTimer.current);
+    setHistoryIndex(newIdx);
+    setElements(cloneEls(snap.elements));
+    setSharedElements(cloneEls(snap.sharedElements));
+    if (snap.look) { setTheme({...snap.look.theme}); setBgColor(snap.look.bgColor); }
     setTimeout(() => { isUndoRedoRef.current = false; }, 0);
   }, []);
 
+  const undo = useCallback(() => {
+    if (historyRef.current.index > 0) restoreHistory(historyRef.current.index - 1);
+  }, [restoreHistory]);
+
   const redo = useCallback(() => {
-    setHistory(h => {
-      const newIdx = historyIndexRef.current + 1;
-      if (newIdx >= h.length) return h;
-      setHistoryIndex(newIdx);
-      isUndoRedoRef.current = true;
-      const snap = h[newIdx];
-      if (snap) {
-        setElements(snap.elements.map(e=>({...e,props:{...e.props}})));
-        setSharedElements(snap.sharedElements.map(e=>({...e,props:{...e.props}})));
-      }
-      setTimeout(() => { isUndoRedoRef.current = false; }, 0);
-      return h;
-    });
-  }, []);
+    const h = historyRef.current;
+    if (h.index < h.entries.length - 1) restoreHistory(h.index + 1);
+  }, [restoreHistory]);
 
   // ── Helpers ──
   const updateEl = useCallback((id, updater) => {
@@ -1953,9 +1960,21 @@ export default function HMIEditor() {
   };
   const resetOverrides = () => {
     if (!window.confirm("Сбросить вручную заданные цвета, радиус и шрифт у ВСЕХ элементов проекта? Они начнут следовать теме.")) return;
-    setElements(prev => prev.map(stripOverrides));
-    setSharedElements(prev => prev.map(stripOverrides));
+    const nextEls = elementsRef.current.map(stripOverrides);
+    const nextShared = sharedRef.current.map(stripOverrides);
+    setElements(nextEls);
+    setSharedElements(nextShared);
     setPages(prev => prev.map(pg => ({...pg, elements: (pg.elements || []).map(stripOverrides)})));
+    pushHistory(nextEls, nextShared);
+  };
+
+  // Смена темы/фона холста: сразу применяем, в историю пишем с задержкой (перетаскивание по палитре — одна запись)
+  const changeLook = (nextTheme, nextBg) => {
+    setTheme(nextTheme);
+    setBgColor(nextBg);
+    lookRef.current = {theme: nextTheme, bgColor: nextBg};
+    clearTimeout(lookTimer.current);
+    lookTimer.current = setTimeout(() => pushHistory(elementsRef.current, sharedRef.current), 500);
   };
 
   // ── Project serialization ──
@@ -2594,7 +2613,7 @@ export default function HMIEditor() {
         {/* Canvas bg color */}
         <div style={{padding:"9px 10px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8}}>
           <div style={{color:T.textDim,fontSize:11,flex:1}}>ФОН КАНВАСА</div>
-          <input type="color" value={bgColor} onChange={e=>setBgColor(e.target.value)}
+          <input type="color" value={bgColor} onChange={e=>changeLook(theme, e.target.value)}
             style={{width:36,height:26,border:`1px solid ${T.border}`,borderRadius:3,cursor:"pointer",padding:1,background:"none"}}/>
         </div>
 
@@ -3178,7 +3197,7 @@ export default function HMIEditor() {
 
       {/* ══ RESOLUTION MODAL ══ */}
       {showTheme&&(
-        <ThemeModal theme={theme} setTheme={setTheme} bgColor={bgColor} setBgColor={setBgColor}
+        <ThemeModal theme={theme} bgColor={bgColor} onChange={changeLook}
           onResetOverrides={resetOverrides} onClose={()=>setShowTheme(false)}/>
       )}
 
