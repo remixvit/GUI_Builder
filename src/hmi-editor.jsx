@@ -805,53 +805,149 @@ function ThemeModal({theme, bgColor, onChange, onResetOverrides, onClose}) {
 }
 
 // ─── EXPORT HELPERS ───────────────────────────────────────────────────────────
-function elToHTML(el, active) {
-  // Render element as inline HTML string for canvas export
-  const p = el.props||{};
-  const W = el.w, H = el.h;
-  switch(el.type) {
-    case "button_rect": { const bg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.textActive||TH.textActive):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:${p.radius??TH.radius??6}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign)};text-align:${p.textAlign||"center"};white-space:pre-line;padding:${p.textAlign==="left"||p.textAlign==="right"?"0 10px":"0"};color:${fg};font-size:${p.fontSize||13}px;font-weight:600;font-family:${TH.font};box-sizing:border-box;">${p.label||"BUTTON"}</div>`; }
-    case "button_round": { const bg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.textActive||TH.textActive):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${bg};border:2px solid ${bd};border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre-line;color:${fg};font-size:${p.fontSize||11}px;font-weight:700;font-family:${TH.font};box-sizing:border-box;">${p.label||"OK"}</div>`; }
-    case "toggle_switch": { const tr=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:54px;height:28px;background:${tr};border:2px solid ${bd};border-radius:14px;position:relative;box-sizing:border-box;"><div style="position:absolute;top:3px;left:${active?27:3}px;width:18px;height:18px;border-radius:50%;background:${active?TH.textActive:(p.knobIdle||TH.textIdle)};"></div></div></div>`; }
-    case "indicator_led": { const c=active?(p.colorActive||TH.ok):(p.colorIdle||TH.surface),bd=active?(p.colorActive||TH.ok):(p.borderIdle||TH.border),sz=p.size||28; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:2px solid ${bd};"></div></div>`; }
-    case "indicator_bar": { const fill=active?(p.colorActive||TH.accent):(p.colorIdle||TH.surface),pct=active?(p.value||70):15; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${p.borderIdle||TH.border};border-radius:${p.radius??TH.radius??4}px;overflow:hidden;position:relative;box-sizing:border-box;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${fill};"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:${p.textColor||TH.text};font-size:11px;font-family:${TH.font};">${active?`${pct}%`:"0%"}</div></div>`; }
-    case "slider_h": { const pct=active?(p.value||60):0,c=p.colorActive||TH.accent; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;padding:0 10px;box-sizing:border-box;"><div style="flex:1;height:4px;background:${p.trackColor||TH.surface};border-radius:2px;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:${c};border-radius:2px;"></div></div></div>`; }
-    case "display_num": { const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),fg=active?(p.colorActive||TH.accent):(p.textIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${bd};border-radius:${p.radius??TH.radius??4}px;display:flex;align-items:center;justify-content:center;color:${fg};font-size:${p.fontSize||22}px;font-family:${TH.font};font-weight:700;letter-spacing:2px;box-sizing:border-box;">${active?(p.value||"42.5"):"--.-"}</div>`; }
-    case "label_text": { const fg=active?(p.colorActive||TH.accent):(p.colorIdle||TH.textIdle); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:${cssAi(p.textVAlign)};justify-content:${cssJc(p.textAlign||"left")};text-align:${p.textAlign||"left"};white-space:pre-line;color:${fg};font-size:${p.fontSize||13}px;font-family:${p.font||TH.font};font-weight:${p.bold?700:600};">${p.text||"LABEL"}</div>`; }
-    case "frame_box": { const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border); return `<div style="width:${W}px;height:${H}px;border:${p.borderWidth||2}px solid ${bd};border-radius:${p.radius??TH.radius??6}px;position:relative;background:${p.bgColor||"rgba(255,255,255,0.015)"};box-sizing:border-box;">${p.title?`<div style="position:absolute;top:-8px;left:12px;background:${TH.bg};padding:0 6px;color:${active?(p.colorActive||TH.accent):(p.colorIdle||TH.textIdle)};font-size:${p.fontSize||11}px;font-family:${TH.font};">${p.title}</div>`:""}</div>`; }
-    case "separator": { const c=active?(p.colorActive||TH.accent):(p.colorIdle||TH.border); return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;"><div style="width:100%;height:${p.thickness||2}px;background:${c};border-radius:1px;"></div></div>`; }
-    case "gauge": { const value=active?(p.value??75):(p.idleValue??20),minVal=p.minVal??0,maxVal=p.maxVal??100,pct=Math.max(0,Math.min(1,(value-minVal)/(maxVal-minVal))),r=48,cx=70,cy=74,startDeg=220,sweepDeg=280,toRad=d=>(d-90)*Math.PI/180,arcPath=(from,to,radius)=>{const s=toRad(from),e=toRad(to),large=(to-from)>180?1:0;return `M ${cx+radius*Math.cos(s)} ${cy+radius*Math.sin(s)} A ${radius} ${radius} 0 ${large} 1 ${cx+radius*Math.cos(e)} ${cy+radius*Math.sin(e)}`;},endAngle=startDeg+sweepDeg*pct,nRad=toRad(endAngle),nx=cx+(r-8)*Math.cos(nRad),ny=cy+(r-8)*Math.sin(nRad),fc=active?(p.colorActive||TH.accent):(p.colorIdle||TH.border),fg=active?(p.colorActive||TH.accent):(p.textIdle||TH.textIdle),sw=p.strokeWidth||8; return `<div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center;"><svg width="${cx*2}" height="${cy*2}" overflow="visible"><path d="${arcPath(startDeg,startDeg+sweepDeg,r)}" fill="none" stroke="${p.trackColor||TH.surface}" stroke-width="${sw}" stroke-linecap="round"/>${pct>0?`<path d="${arcPath(startDeg,endAngle,r)}" fill="none" stroke="${fc}" stroke-width="${sw}" stroke-linecap="round"/>`:""}<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${fc}" stroke-width="2.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="5" fill="${fc}" stroke="${p.trackColor||TH.surface}" stroke-width="2"/><text x="${cx}" y="${cy+22}" text-anchor="middle" fill="${fg}" font-size="${p.fontSize||14}" font-family="${TH.font}" font-weight="700">${active?value:"--"}</text>${p.unit?`<text x="${cx}" y="${cy+36}" text-anchor="middle" fill="${fg}" font-size="9" font-family="${TH.font}" opacity="0.7">${p.unit}</text>`:""}</svg></div>`; }
-    case "data_table": { let cols=[]; try{cols=JSON.parse(p.columns||'["Name","Value","Unit"]');}catch{cols=["Name","Value","Unit"];} let rows=[]; try{rows=JSON.parse(p.rows||'[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]]');}catch{rows=[["Temp","42.5","°C"],["Press","1.02","bar"],["Flow","18.3","m³/h"]];} const bd=active?(p.colorActive||TH.accent):(p.borderIdle||TH.border),hBg=p.headerBg||(active?TH.accentDim:TH.sunken),hFg=active?(p.colorActive||TH.accent):(p.headerFg||TH.textIdle),rFg=p.rowFg||(active?TH.text:TH.textIdle),fs=p.fontSize||11; return `<div style="width:${W}px;height:${H}px;background:${p.bgColor||TH.sunken};border:1px solid ${bd};border-radius:${p.radius??TH.radius??4}px;overflow:hidden;display:flex;flex-direction:column;box-sizing:border-box;font-family:${TH.font};"><div style="display:flex;background:${hBg};border-bottom:1px solid ${bd};">${cols.map(c=>`<div style="flex:1;padding:3px 6px;color:${hFg};font-size:${fs}px;font-weight:700;overflow:hidden;white-space:nowrap;">${c}</div>`).join("")}</div><div style="flex:1;overflow:hidden;">${rows.map((row,ri)=>`<div style="display:flex;background:${ri%2===1?(p.altBg||"rgba(255,255,255,0.025)"):"transparent"};border-bottom:1px solid ${bd}22;">${cols.map((_,ci)=>`<div style="flex:1;padding:3px 6px;color:${ci===0?hFg:rFg};font-size:${fs}px;overflow:hidden;white-space:nowrap;font-weight:${ci===0?600:400};">${row[ci]??""}</div>`).join("")}</div>`).join("")}</div></div>`; }
-    default: return `<div style="width:${W}px;height:${H}px;background:#333;border-radius:4px;"></div>`;
-  }
+// Экспорт рисует элементы тем же кодом, что и редактор (DEFS[type].render), поэтому
+// картинки совпадают с холстом: включая 2-Pos Toggle, Halo, Alarm, иконки на кнопках и тему.
+function elementMarkup(el, active, renderToStaticMarkup) {
+  const def = DEFS[el.type];
+  if (!def) return `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${el.w}px;height:${el.h}px;background:#333;border-radius:4px;"></div>`;
+  const html = renderToStaticMarkup(
+    <div style={{width:el.w, height:el.h, position:"relative"}}>{def.render(el.props || {}, active)}</div>
+  );
+  // HTML -> валидный XHTML для вставки в <foreignObject>
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return new XMLSerializer().serializeToString(doc.body.firstElementChild);
 }
 
-function exportPNG(pageElements, sharedElements, active, filename, cW, cH, bgColor, bgImage) {
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// Рисует область холста region={x,y,w,h}: фон (цвет + картинка) и переданные элементы в заданном состоянии
+async function renderRegionBlob(region, els, active, cW, cH, bgColor, bgImage) {
+  // серверный рендерер React нужен только для экспорта — грузим его лениво, отдельным чанком
+  const {renderToStaticMarkup} = await import("react-dom/server");
+  const {x: rx, y: ry, w: rw, h: rh} = region;
   const canvas = document.createElement("canvas");
-  canvas.width = cW; canvas.height = cH;
+  canvas.width = rw; canvas.height = rh;
   const ctx = canvas.getContext("2d");
-  ctx.fillStyle = bgColor||T.bg;
-  ctx.fillRect(0,0,cW,cH);
-  const allEls = [...sharedElements, ...pageElements];
-  const drawElements = () => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cW}" height="${cH}">
-    <foreignObject width="${cW}" height="${cH}">
-      <div xmlns="http://www.w3.org/1999/xhtml" style="width:${cW}px;height:${cH}px;position:relative;background:transparent;font-family:monospace;">
-        ${allEls.map(el=>`<div style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity??1};">${elToHTML(el,active)}</div>`).join("")}
-      </div>
+  ctx.fillStyle = bgColor || T.bg;
+  ctx.fillRect(0, 0, rw, rh);
+  if (bgImage) {
+    try {
+      const bg = await loadImage(bgImage);
+      const kx = bg.naturalWidth / cW, ky = bg.naturalHeight / cH;
+      ctx.drawImage(bg, rx * kx, ry * ky, rw * kx, rh * ky, 0, 0, rw, rh);
+    } catch { /* фон не загрузился — остаётся цвет */ }
+  }
+  const items = els.map(el =>
+    `<div style="position:absolute;left:${el.x - rx}px;top:${el.y - ry}px;width:${el.w}px;height:${el.h}px;opacity:${el.opacity ?? 1};">${elementMarkup(el, active, renderToStaticMarkup)}</div>`
+  ).join("");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${rw}" height="${rh}">
+    <foreignObject width="${rw}" height="${rh}">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="width:${rw}px;height:${rh}px;position:relative;overflow:hidden;background:transparent;font-family:${TH.font};">${items}</div>
     </foreignObject>
   </svg>`;
-    const url = URL.createObjectURL(new Blob([svg],{type:"image/svg+xml"}));
-    const img = new Image();
-    img.onload = () => { ctx.drawImage(img,0,0); URL.revokeObjectURL(url); canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=filename;a.click();}); };
-    img.src = url;
-  };
-  if (bgImage) {
-    const bgImg = new Image();
-    bgImg.onload = () => { ctx.drawImage(bgImg,0,0,cW,cH); drawElements(); };
-    bgImg.src = bgImage;
-  } else { drawElements(); }
+  // data:-URL, а не blob:-URL — иначе Chrome помечает холст как «tainted» и toBlob() падает
+  ctx.drawImage(await loadImage("data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg)), 0, 0);
+  return new Promise(resolve => canvas.toBlob(resolve, "image/png"));
 }
+
+async function exportPNG(pageElements, sharedElements, active, filename, cW, cH, bgColor, bgImage) {
+  const blob = await renderRegionBlob({x: 0, y: 0, w: cW, h: cH}, [...sharedElements, ...pageElements], active, cW, cH, bgColor, bgImage);
+  downloadBlob(blob, filename);
+}
+
+// ─── DGUS: иконки состояний (выкл / вкл) ──────────────────────────────────────
+// Для элементов с двумя состояниями (переключатели, 2-позиционные кнопки, LED) экспортируются
+// два файла по размеру самого элемента. Включается у элемента флажком «Иконки для DGUS».
+const ICON_DEFAULT_TYPES = new Set(["toggle_switch", "toggle_2pos", "indicator_led"]);
+const wantsIcons = el => el.props?.exportIcons ?? ICON_DEFAULT_TYPES.has(el.type);
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+const crc32 = buf => {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+};
+
+// Минимальный ZIP без сжатия (PNG и так сжат): files = [{name, data: Uint8Array}]
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const u16 = v => [v & 255, (v >>> 8) & 255];
+  const u32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const flags = 0x0800; // имена в UTF-8
+  const chunks = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const local = new Uint8Array([0x50, 0x4b, 3, 4, ...u16(20), ...u16(flags), ...u16(0), ...u16(dosTime), ...u16(dosDate),
+      ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length), ...u16(0)]);
+    chunks.push(local, name, f.data);
+    central.push({name, crc, size, offset});
+    offset += local.length + name.length + size;
+  }
+  const cdStart = offset;
+  for (const c of central) {
+    const hdr = new Uint8Array([0x50, 0x4b, 1, 2, ...u16(20), ...u16(20), ...u16(flags), ...u16(0), ...u16(dosTime), ...u16(dosDate),
+      ...u32(c.crc), ...u32(c.size), ...u32(c.size), ...u16(c.name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(c.offset)]);
+    chunks.push(hdr, c.name);
+    offset += hdr.length + c.name.length;
+  }
+  chunks.push(new Uint8Array([0x50, 0x4b, 5, 6, 0, 0, 0, 0, ...u16(central.length), ...u16(central.length), ...u32(offset - cdStart), ...u32(cdStart), 0, 0]));
+  return new Blob(chunks, {type: "application/zip"});
+}
+
+// Возвращает {blob, count}: ZIP с иконками и таблицей icons.csv; count — число элементов
+async function buildIconsZip(pages, sharedElements, cW, cH, bgColor, bgImage) {
+  const jobs = [
+    ...sharedElements.filter(wantsIcons).map(el => ({el, page: "shared"})),
+    ...pages.flatMap(pg => pg.elements.filter(wantsIcons).map(el => ({el, page: pg.name}))),
+  ];
+  if (!jobs.length) return {blob: null, count: 0};
+  const pad = n => String(n).padStart(3, "0");
+  const files = [];
+  const rows = [["icon_off", "icon_on", "file_off", "file_on", "page", "element", "type", "label", "x", "y", "w", "h"]];
+  for (let k = 0; k < jobs.length; k++) {
+    const {el, page} = jobs[k];
+    const region = {x: el.x, y: el.y, w: el.w, h: el.h};
+    const offName = `${pad(2 * k)}_${el.id}_off.png`;
+    const onName = `${pad(2 * k + 1)}_${el.id}_on.png`;
+    for (const [active, name] of [[false, offName], [true, onName]]) {
+      const blob = await renderRegionBlob(region, [el], active, cW, cH, bgColor, bgImage);
+      files.push({name, data: new Uint8Array(await blob.arrayBuffer())});
+    }
+    const p = el.props || {};
+    rows.push([2 * k, 2 * k + 1, offName, onName, page, el.id, el.type, p.label || p.text || p.title || "", el.x, el.y, el.w, el.h]);
+  }
+  const csv = "﻿" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  files.push({name: "icons.csv", data: new TextEncoder().encode(csv)});
+  return {blob: makeZip(files), count: jobs.length};
+}
+
 
 function exportCSV(pages, sharedElements, cW, cH) {
   const rows = [["Page","Page Name","Layer","ID","Type","Label","X","Y","W","H","X2","Y2","Cx","Cy"]];
@@ -871,8 +967,6 @@ function exportCSV(pages, sharedElements, cW, cH) {
 const hAlignStyle = a => ({justifyContent: a==="left"?"flex-start":a==="right"?"flex-end":"center", textAlign: a||"center"});
 const vAlignItems = a => a==="top"?"flex-start":a==="bottom"?"flex-end":"center";
 const hPad = a => (a==="left"||a==="right") ? "0 10px" : 0;
-const cssJc = a => a==="left"?"flex-start":a==="right"?"flex-end":"center";
-const cssAi = a => a==="top"?"flex-start":a==="bottom"?"flex-end":"center";
 
 function AlignPicker({h, v, onH, onV, defaultH="center"}) {
   const curH = h || defaultH, curV = v || "middle";
@@ -2202,6 +2296,20 @@ export default function HMIEditor() {
     setTimeout(() => exportPNG(elements, sharedElements, true, `${activeNum}.png`, cW, cH, bgColor, bgImage), 350);
   };
 
+  const handleExportIcons = async () => {
+    try {
+      const {blob, count} = await buildIconsZip(allPages, sharedElements, cW, cH, bgColor, bgImage);
+      if (!count) {
+        alert("Нет элементов для экспорта иконок. Включите флажок «Иконки для DGUS» в свойствах элемента (по умолчанию он включён у Toggle, 2-Pos Toggle и LED).");
+        return;
+      }
+      downloadBlob(blob, "icons.zip");
+    } catch (e) {
+      console.error(e);
+      alert("Не удалось собрать иконки: " + (e?.message || e));
+    }
+  };
+
   const handleExportAll = () => {
     allPages.forEach((p, i) => {
       setTimeout(() => {
@@ -2265,6 +2373,7 @@ export default function HMIEditor() {
         <div>• Колесо — зум, зажать колесо — панорама</div>
         <div style={{marginTop:10,color:T.accent}}>⬇ 2×PNG — экспорт</div>
         <div style={{color:T.green}}>⬇ CSV — координаты</div>
+        <div style={{color:T.green}}>⬇ ИКОНКИ — 2 файла на элемент (выкл/вкл)</div>
         <div style={{marginTop:10,color:T.blue,fontSize:11}}>Синяя пунктирная рамка<br/>= общий элемент</div>
       </div>
     );
@@ -2307,6 +2416,13 @@ export default function HMIEditor() {
               title="Сбросить" style={{color:T.textFaint,cursor:"pointer",fontSize:13,padding:"2px 4px",flexShrink:0}}>✕</div>
           </div>
         </div>
+
+        {/* DGUS icons */}
+        <label title="Для этого элемента экспортируются 2 файла: выкл и вкл (кнопка «⬇ ИКОНКИ» вверху)"
+          style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,cursor:"pointer",fontSize:11,color:T.textDim}}>
+          <input type="checkbox" checked={wantsIcons(selectedEl)} onChange={e=>up("exportIcons", e.target.checked)} style={{accentColor:T.accent}}/>
+          Иконки для DGUS (2 файла: выкл / вкл)
+        </label>
 
         {/* Tab switcher */}
         <div style={{display:"flex",gap:5,marginBottom:12,borderBottom:`1px solid ${T.border}`,paddingBottom:10}}>
@@ -2730,6 +2846,10 @@ export default function HMIEditor() {
           <button onClick={handleExportAll} title="Экспорт всех страниц"
             style={{padding:"6px 12px",background:"transparent",border:`1px solid ${T.accent}`,color:T.accent,fontSize:12,cursor:"pointer",borderRadius:4}}>
             ⬇ ALL
+          </button>
+          <button onClick={handleExportIcons} title="Иконки состояний для DGUS: по 2 файла (выкл / вкл) на элемент, ZIP + таблица icons.csv"
+            style={{padding:"6px 12px",background:"transparent",border:`1px solid ${T.green}`,color:T.green,fontSize:12,cursor:"pointer",borderRadius:4}}>
+            ⬇ ИКОНКИ
           </button>
           {currentUser?.role === "admin" && (
             <button onClick={()=>{ setShowAdmin(true); loadAdminUsers(); setAdminMsg(null); }}
