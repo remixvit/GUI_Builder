@@ -758,55 +758,84 @@ function evalExpr(src, vars = {}) {
   return result !== null && i === s.length && Number.isFinite(result) ? result : null;
 }
 
-function CoordField({label, value, onCommit, vars}) {
-  const [text, setText] = useState(String(value));
+// Общее числовое поле: текстовый ввод, выражения (1024-8, w/2, cw-w-8), Enter/blur — применить,
+// Esc — отмена, ↑↓ — шаг (Shift — крупный шаг). Значение clamp-ится в [min, max].
+function NumInput({value, onCommit, onEnter, vars, min, max, integer = false, step = 1, bigStep, placeholder, autoFocus, style, title}) {
+  const fmt = v => (v === undefined || v === null || Number.isNaN(v) ? "" : String(v));
+  const [text, setText] = useState(fmt(value));
   const [editing, setEditing] = useState(false);
-  useEffect(() => { if (!editing) setText(String(value)); }, [value, editing]);
+  useEffect(() => { if (!editing) setText(fmt(value)); }, [value, editing]);
 
+  const normalize = v => {
+    let r = integer ? Math.round(v) : Math.round(v * 1e6) / 1e6;
+    if (min !== undefined) r = Math.max(min, r);
+    if (max !== undefined) r = Math.min(max, r);
+    return r;
+  };
   const parsed = evalExpr(text, vars);
   const invalid = editing && text.trim() !== "" && parsed === null;
 
+  // Возвращает применённое значение или null, если ввод некорректен
   const commit = (raw = text) => {
     const v = evalExpr(raw, vars);
-    if (v === null) { setText(String(value)); return; }
-    const r = Math.round(v);
+    if (v === null) { setText(fmt(value)); return null; }
+    const r = normalize(v);
     setText(String(r));
     if (r !== value) onCommit(r);
+    return r;
   };
 
   const onKeyDown = (e) => {
-    if (e.key === "Enter") { commit(); e.currentTarget.select(); }
-    else if (e.key === "Escape") { setText(String(value)); e.currentTarget.blur(); }
-    else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+    if (e.key === "Enter") {
+      const r = commit();
+      if (r !== null && onEnter) onEnter(r);
+      e.currentTarget.select();
+    } else if (e.key === "Escape") {
+      setText(fmt(value));
+      e.currentTarget.blur();
+    } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault();
-      const base = evalExpr(text, vars) ?? value;
-      const step = (e.shiftKey ? GRID : 1) * (e.key === "ArrowUp" ? 1 : -1);
-      commit(String(Math.round(base) + step));
+      const base = evalExpr(text, vars) ?? value ?? 0;
+      const d = (e.shiftKey && bigStep ? bigStep : step) * (e.key === "ArrowUp" ? 1 : -1);
+      commit(String(normalize(base + d)));
     }
   };
 
   return (
+    <input type="text" inputMode="decimal" spellCheck={false} autoComplete="off" autoFocus={autoFocus}
+      value={text} placeholder={placeholder}
+      title={title || "Число или выражение: 1024-8, w/2. Enter — применить, Esc — отмена, ↑↓ — шаг"}
+      onFocus={e => { setEditing(true); e.target.select(); }}
+      onBlur={() => { commit(); setEditing(false); }}
+      onChange={e => setText(e.target.value)}
+      onKeyDown={onKeyDown}
+      style={{...style, ...(invalid ? {borderColor: T.red} : null)}}/>
+  );
+}
+
+function CoordField({label, value, onCommit, vars}) {
+  return (
     <div>
       <div style={{color:T.textDim,fontSize:11,marginBottom:3}}>{label}</div>
-      <input type="text" inputMode="decimal" spellCheck={false} autoComplete="off"
-        value={text} title="Число или выражение: 1024-8, w/2, cw-w-8. Enter — применить, Esc — отмена, ↑↓ — ±1 (Shift — ±шаг сетки)"
-        onFocus={e=>{setEditing(true); e.target.select();}}
-        onBlur={()=>{commit(); setEditing(false);}}
-        onChange={e=>setText(e.target.value)}
-        onKeyDown={onKeyDown}
-        style={{width:"100%",background:T.bg,border:`1px solid ${invalid?T.red||"#ef4444":T.border}`,color:T.green,padding:"5px 6px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
+      <NumInput value={value} onCommit={onCommit} vars={vars} integer step={1} bigStep={GRID}
+        title="Число или выражение: 1024-8, w/2, cw-w-8. Enter — применить, Esc — отмена, ↑↓ — ±1 (Shift — шаг сетки)"
+        style={{width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.green,padding:"5px 6px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
     </div>
   );
 }
 
 // ─── PROP FIELD ───────────────────────────────────────────────────────────────
 function PropField({label, value, onChange, type="text", min, max, placeholder}) {
+  const inputStyle = {width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"5px 8px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"};
+  const fractional = max !== undefined && max <= 1;
   return (
     <div style={{marginBottom:8}}>
       <div style={{color:T.textDim,fontSize:11,marginBottom:3}}>{label}</div>
-      <input type={type} value={value??""} min={min} max={max} placeholder={placeholder}
-        onChange={e=>onChange(type==="number"?parseFloat(e.target.value)||0:e.target.value)}
-        style={{width:"100%",background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"5px 8px",fontSize:12,fontFamily:"monospace",borderRadius:3,boxSizing:"border-box"}}/>
+      {type === "number"
+        ? <NumInput value={value} onCommit={onChange} min={min} max={max} placeholder={placeholder}
+            step={fractional ? 0.1 : 1} bigStep={fractional ? 0.5 : 10} style={inputStyle}/>
+        : <input type={type} value={value??""} placeholder={placeholder}
+            onChange={e=>onChange(e.target.value)} style={inputStyle}/>}
     </div>
   );
 }
@@ -2679,6 +2708,14 @@ export default function HMIEditor() {
           {editingGuide && (() => {
             const isV = editingGuide.axis === "v";
             const maxVal = isV ? cW : cH;
+            const applyGuide = v => {
+              setGuides(prev => {
+                const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].map((g,i) => i===editingGuide.idx ? v : g)};
+                guidesRef.current = next;
+                return next;
+              });
+              setEditingGuide(null);
+            };
             return (
               <div style={{position:"fixed",left:editingGuide.screenX,top:editingGuide.screenY,zIndex:1000,background:T.panel2,border:`1px solid ${T.blue}`,borderRadius:6,padding:"8px 10px",boxShadow:"0 4px 20px rgba(0,0,0,0.6)",display:"flex",flexDirection:"column",gap:6,minWidth:160}}
                 onClick={e=>e.stopPropagation()}>
@@ -2686,37 +2723,15 @@ export default function HMIEditor() {
                   {isV ? "НАПРАВЛЯЮЩАЯ X" : "НАПРАВЛЯЮЩАЯ Y"}
                 </div>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <input
-                    autoFocus
-                    type="number" min={0} max={maxVal}
+                  <NumInput autoFocus integer min={0} max={maxVal} vars={{cw:cW, ch:cH}}
                     value={editingGuide.value}
-                    onChange={e => setEditingGuide(prev => ({...prev, value: parseInt(e.target.value)||0}))}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        const v = Math.max(0, Math.min(maxVal, editingGuide.value));
-                        setGuides(prev => {
-                          const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].map((g,i) => i===editingGuide.idx ? v : g)};
-                          guidesRef.current = next;
-                          return next;
-                        });
-                        setEditingGuide(null);
-                      }
-                      if (e.key === "Escape") setEditingGuide(null);
-                    }}
-                    style={{width:70,background:T.bg,border:`1px solid ${T.blue}`,color:T.text,padding:"4px 8px",fontSize:13,fontFamily:"monospace",borderRadius:3,outline:"none"}}
-                  />
+                    onCommit={v => setEditingGuide(prev => ({...prev, value: v}))}
+                    onEnter={applyGuide}
+                    style={{width:70,background:T.bg,border:`1px solid ${T.blue}`,color:T.text,padding:"4px 8px",fontSize:13,fontFamily:"monospace",borderRadius:3,outline:"none"}}/>
                   <span style={{color:T.textDim,fontSize:11}}>px</span>
                 </div>
                 <div style={{display:"flex",gap:5}}>
-                  <button onClick={()=>{
-                    const v = Math.max(0, Math.min(maxVal, editingGuide.value));
-                    setGuides(prev => {
-                      const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].map((g,i) => i===editingGuide.idx ? v : g)};
-                      guidesRef.current = next;
-                      return next;
-                    });
-                    setEditingGuide(null);
-                  }} style={{flex:1,padding:"4px",background:T.blue,border:"none",color:"#fff",fontSize:11,cursor:"pointer",borderRadius:3,fontFamily:"monospace"}}>OK</button>
+                  <button onClick={()=>applyGuide(Math.max(0, Math.min(maxVal, editingGuide.value)))} style={{flex:1,padding:"4px",background:T.blue,border:"none",color:"#fff",fontSize:11,cursor:"pointer",borderRadius:3,fontFamily:"monospace"}}>OK</button>
                   <button onClick={()=>{
                     setGuides(prev => {
                       const next = {...prev, [editingGuide.axis]: prev[editingGuide.axis].filter((_,i) => i!==editingGuide.idx)};
@@ -2929,9 +2944,9 @@ export default function HMIEditor() {
             </div>
             {tempRes.w===null&&(
               <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:14}}>
-                <input type="number" value={customW} onChange={e=>setCustomW(parseInt(e.target.value)||800)} style={{flex:1,background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,fontFamily:"monospace",borderRadius:3}}/>
+                <NumInput integer min={1} value={customW} onCommit={setCustomW} style={{flex:1,background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,fontFamily:"monospace",borderRadius:3}}/>
                 <span style={{color:T.textDim,fontSize:15}}>×</span>
-                <input type="number" value={customH} onChange={e=>setCustomH(parseInt(e.target.value)||480)} style={{flex:1,background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,fontFamily:"monospace",borderRadius:3}}/>
+                <NumInput integer min={1} value={customH} onCommit={setCustomH} style={{flex:1,background:T.bg,border:`1px solid ${T.border}`,color:T.text,padding:"7px 10px",fontSize:13,fontFamily:"monospace",borderRadius:3}}/>
               </div>
             )}
             <div style={{display:"flex",gap:8}}>
