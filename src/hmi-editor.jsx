@@ -939,6 +939,22 @@ async function buildPageFiles(pages, sharedElements, cW, cH, bgColor, bgImage) {
   return files;
 }
 
+// Выровненная текстовая таблица (читается в любом просмотрщике): header — массив названий,
+// rows — массив строк, right — индексы столбцов, выравниваемых вправо (числа)
+function formatTextTable(header, rows, right = []) {
+  const all = [header, ...rows].map(r => r.map(v => String(v ?? "")));
+  const widths = header.map((_, c) => Math.max(...all.map(r => [...r[c]].length)));
+  const cell = (v, c) => right.includes(c) ? v.padStart(widths[c]) : v.padEnd(widths[c]);
+  const line = r => r.map(cell).join("   ").trimEnd();
+  return [line(all[0]), widths.map(w => "-".repeat(w)).join("   "), ...all.slice(1).map(line)].join("\r\n");
+}
+
+// Значение для CSV: кавычки только там, где они нужны
+const csvCell = v => {
+  const t = String(v ?? "");
+  return /[;"\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+};
+
 // Иконки элементов с флажком «Иконки для DGUS»; startIndex — индекс первой иконки.
 // Возвращает {files, count}: PNG-файлы (имя = индекс) и таблицу icons.csv
 async function buildIconFiles(pages, sharedElements, startIndex, cW, cH, bgColor, bgImage) {
@@ -948,7 +964,7 @@ async function buildIconFiles(pages, sharedElements, startIndex, cW, cH, bgColor
   ];
   if (!jobs.length) return {files: [], count: 0};
   const files = [];
-  const rows = [["icon_off", "icon_on", "file_off", "file_on", "page", "element", "type", "label", "x", "y", "w", "h"]];
+  const rows = [];
   for (let k = 0; k < jobs.length; k++) {
     const {el, page} = jobs[k];
     const region = {x: el.x, y: el.y, w: el.w, h: el.h};
@@ -958,10 +974,29 @@ async function buildIconFiles(pages, sharedElements, startIndex, cW, cH, bgColor
       files.push({name: `${idx}.png`, data: await blobBytes(blob)});
     }
     const p = el.props || {};
-    rows.push([offIdx, onIdx, `${offIdx}.png`, `${onIdx}.png`, page, el.id, el.type, p.label || p.text || p.title || "", el.x, el.y, el.w, el.h]);
+    rows.push({offIdx, onIdx, page, id: el.id, type: el.type, label: p.label || p.text || p.title || "", x: el.x, y: el.y, w: el.w, h: el.h});
   }
-  const csv = "\uFEFF" + rows.map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
-  files.push({name: "icons.csv", data: new TextEncoder().encode(csv)});
+  const enc = new TextEncoder();
+  // icons.txt — для чтения человеком
+  const pageCount = startIndex / 2;
+  const txt = "\uFEFF" + [
+    "Иконки для DGUS",
+    `Страниц: ${pageCount} (индексы 0-${Math.max(startIndex - 1, 0)}), первая иконка имеет индекс ${startIndex}. Размер экрана: ${cW}x${cH}.`,
+    "Каждая иконка занимает два индекса: первый - состояние «выкл», следующий - «вкл».",
+    "",
+    formatTextTable(
+      ["Выкл / Вкл", "Файлы", "Страница", "Элемент", "Тип", "X", "Y", "Ширина", "Высота", "Подпись"],
+      rows.map(r => [`${r.offIdx} / ${r.onIdx}`, `${r.offIdx}.png / ${r.onIdx}.png`, r.page, r.id, r.type, r.x, r.y, r.w, r.h, r.label]),
+      [5, 6, 7, 8]
+    ),
+    "",
+  ].join("\r\n");
+  files.push({name: "icons.txt", data: enc.encode(txt)});
+  // icons.csv — для программ (разделитель «;», UTF-8)
+  const csvRows = [["icon_off", "icon_on", "file_off", "file_on", "page", "element", "type", "label", "x", "y", "w", "h"],
+    ...rows.map(r => [r.offIdx, r.onIdx, `${r.offIdx}.png`, `${r.onIdx}.png`, r.page, r.id, r.type, r.label, r.x, r.y, r.w, r.h])];
+  const csv = "\uFEFF" + csvRows.map(r => r.map(csvCell).join(";")).join("\r\n");
+  files.push({name: "icons.csv", data: enc.encode(csv)});
   return {files, count: jobs.length};
 }
 
